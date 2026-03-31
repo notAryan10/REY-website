@@ -43,8 +43,9 @@ export default function ResourcesPage() {
   const memberResources = resources.filter(r => r.accessLevel === "members");
 
   const handleDownload = (res: any) => {
-    if (res.fileUrl) {
-      window.open(res.fileUrl, "_blank");
+    if (res._id) {
+       // Direct to secure download API instead of Cloudinary URL
+       window.open(`/api/download/${res._id}`, "_blank");
     }
   };
 

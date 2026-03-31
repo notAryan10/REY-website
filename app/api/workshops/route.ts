@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import Event from "@/models/Event";
+import { getUserFromSession } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   try {
     await dbConnect();
-    const session = await getServerSession(authOptions);
+    const session = await getUserFromSession();
     const userRole = session?.user?.role || "spectator";
 
     let query: any = { type: "workshop" };

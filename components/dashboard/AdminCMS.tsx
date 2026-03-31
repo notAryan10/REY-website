@@ -12,6 +12,8 @@ export function AdminCMS() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [events, setEvents] = useState<any[]>([]);
+  const [resources, setResources] = useState<any[]>([]);
+  const [resourceLoading, setResourceLoading] = useState(false);
 
   const [eventForm, setEventForm] = useState({
     title: "",
@@ -32,6 +34,7 @@ export function AdminCMS() {
 
   useEffect(() => {
     fetchEvents();
+    fetchResources();
   }, []);
 
   const fetchEvents = async () => {
@@ -43,6 +46,21 @@ export function AdminCMS() {
       }
     } catch (err) {
       console.error("Failed to fetch events", err);
+    }
+  };
+
+  const fetchResources = async () => {
+    setResourceLoading(true);
+    try {
+      const res = await fetch("/api/resources");
+      if (res.ok) {
+        const data = await res.json();
+        setResources(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch resources", err);
+    } finally {
+      setResourceLoading(false);
     }
   };
 
@@ -96,14 +114,35 @@ export function AdminCMS() {
       if (res.ok) {
         setStatus({ type: "success", message: "Resource uploaded successfully! 📁" });
         setResourceForm({ title: "", file: null, eventId: "", accessLevel: "public", accent: "sky" });
+        fetchResources(); // Refresh archive list
       } else {
         const error = await res.json();
-        setStatus({ type: "error", message: error.error || "Failed to upload resource" });
+        const errorMessage = error.error || `Upload failed with status: ${res.status}`;
+        console.error("UPLOAD_ERROR:", error);
+        setStatus({ type: "error", message: errorMessage });
       }
     } catch (err) {
-      setStatus({ type: "error", message: "An unexpected error occurred" });
+      console.error("FATAL_UPLOAD_ERROR:", err);
+      setStatus({ type: "error", message: "Network error or server crash during transit" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteResource = async (id: string) => {
+    if (!confirm("Are you sure you want to purge this knowledge artifact? This is irreversible.")) return;
+
+    try {
+      const res = await fetch(`/api/resources/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setStatus({ type: "success", message: "Resource identity purged. ⚡" });
+        fetchResources();
+      } else {
+        const error = await res.json();
+        setStatus({ type: "error", message: error.error || "Failed to delete" });
+      }
+    } catch (err) {
+      setStatus({ type: "error", message: "An unexpected error occurred during purging." });
     }
   };
 
@@ -247,7 +286,12 @@ export function AdminCMS() {
                 </div>
 
                 <div className="pt-4">
-                  <Button variant={eventForm.accent as any} className="w-full h-12 uppercase font-pixel tracking-[0.2em] text-xs" disabled={loading}>
+                  <Button 
+                    type="submit"
+                    variant={eventForm.accent as any} 
+                    className="w-full h-12 uppercase font-pixel tracking-[0.2em] text-xs" 
+                    disabled={loading}
+                  >
                     {loading ? <Loader2 className="animate-spin mr-2" size={16} /> : <Plus className="mr-2" size={16} />}
                     Finalize Event Setup
                   </Button>
@@ -255,87 +299,148 @@ export function AdminCMS() {
               </form>
             </Card>
           ) : (
-            <Card accent={resourceForm.accent as any} className="max-w-2xl">
-              <div className="flex items-center gap-3 mb-8">
-                <div className={`p-2 bg-${resourceForm.accent}/10 rounded-lg`}>
-                  <Upload className={`text-${resourceForm.accent}`} size={20} />
-                </div>
-                <h3 className="text-xl uppercase font-pixel tracking-tighter">Upload Knowledge Artifact</h3>
-              </div>
-
-              <form onSubmit={handleResourceSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-pixel text-text-secondary tracking-widest">Resource Title</label>
-                  <input
-                    type="text"
-                    required
-                    value={resourceForm.title}
-                    onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })}
-                    className="w-full bg-stone/20 border-2 border-border/50 rounded-lg px-4 py-3 text-white focus:border-grass/50 transition-all outline-none"
-                    placeholder="e.g., Intro to WebGL (PDF)..."
-                  />
+            <div className="space-y-8">
+              <Card accent={resourceForm.accent as any} className="max-w-2xl">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className={`p-2 bg-${resourceForm.accent}/10 rounded-lg`}>
+                    <Upload className={`text-${resourceForm.accent}`} size={20} />
+                  </div>
+                  <h3 className="text-xl uppercase font-pixel tracking-tighter">Upload Knowledge Artifact</h3>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-pixel text-text-secondary tracking-widest">Select Data File</label>
-                  <div className="relative h-32 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center group hover:border-grass/50 transition-all cursor-pointer overflow-hidden text-center bg-stone/10">
+                <form onSubmit={handleResourceSubmit} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase font-pixel text-text-secondary tracking-widest">Resource Title</label>
                     <input
-                      type="file"
+                      type="text"
                       required
-                      onChange={(e) => setResourceForm({ ...resourceForm, file: e.target.files?.[0] || null })}
-                      className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                      value={resourceForm.title}
+                      onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })}
+                      className="w-full bg-stone/20 border-2 border-border/50 rounded-lg px-4 py-3 text-white focus:border-grass/50 transition-all outline-none"
+                      placeholder="e.g., Intro to WebGL (PDF)..."
                     />
-                    {resourceForm.file ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <Check className="text-grass" size={24} />
-                        <span className="text-xs text-white font-sans">{resourceForm.file.name}</span>
-                        <span className="text-[10px] text-text-secondary uppercase font-pixel">Ready for Transit</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2">
-                        <Upload className="text-text-secondary group-hover:text-grass transition-colors" size={24} />
-                        <span className="text-xs text-text-secondary">Drag & Drop or Click to Upload</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] uppercase font-pixel text-text-secondary tracking-widest">Link to Event (Optional)</label>
-                    <select
-                      value={resourceForm.eventId}
-                      onChange={(e) => setResourceForm({ ...resourceForm, eventId: e.target.value })}
-                      className="w-full bg-stone/20 border-2 border-border/50 rounded-lg px-4 py-3 text-white focus:border-grass/50 transition-all outline-none appearance-none"
-                    >
-                      <option value="">Detached Resource</option>
-                      {events.map((ev) => (
-                        <option key={ev._id} value={ev._id}>{ev.title}</option>
-                      ))}
-                    </select>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase font-pixel text-text-secondary tracking-widest">Access Protocol</label>
-                    <select
-                      value={resourceForm.accessLevel}
-                      onChange={(e) => setResourceForm({ ...resourceForm, accessLevel: e.target.value })}
-                      className="w-full bg-stone/20 border-2 border-border/50 rounded-lg px-4 py-3 text-white focus:border-grass/50 transition-all outline-none appearance-none"
-                    >
-                      <option value="public">Public (All Visitors)</option>
-                      <option value="members">Classified (Members Only)</option>
-                    </select>
+                    <label className="text-[10px] uppercase font-pixel text-text-secondary tracking-widest">Select Data File</label>
+                    <div className="relative h-32 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center group hover:border-grass/50 transition-all cursor-pointer overflow-hidden text-center bg-stone/10">
+                      <input
+                        type="file"
+                        required
+                        onChange={(e) => setResourceForm({ ...resourceForm, file: e.target.files?.[0] || null })}
+                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                      />
+                      {resourceForm.file ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <Check className="text-grass" size={24} />
+                          <span className="text-xs text-white font-sans">{resourceForm.file.name}</span>
+                          <span className="text-[10px] text-text-secondary uppercase font-pixel">Ready for Transit</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <Upload className="text-text-secondary group-hover:text-grass transition-colors" size={24} />
+                          <span className="text-xs text-text-secondary">Drag & Drop or Click to Upload</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-pixel text-text-secondary tracking-widest">Link to Event (Optional)</label>
+                      <select
+                        value={resourceForm.eventId}
+                        onChange={(e) => setResourceForm({ ...resourceForm, eventId: e.target.value })}
+                        className="w-full bg-stone/20 border-2 border-border/50 rounded-lg px-4 py-3 text-white focus:border-grass/50 transition-all outline-none appearance-none"
+                      >
+                        <option value="">Detached Resource</option>
+                        {events.map((ev) => (
+                          <option key={ev._id} value={ev._id}>{ev.title}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-pixel text-text-secondary tracking-widest">Access Protocol</label>
+                      <select
+                        value={resourceForm.accessLevel}
+                        onChange={(e) => setResourceForm({ ...resourceForm, accessLevel: e.target.value })}
+                        className="w-full bg-stone/20 border-2 border-border/50 rounded-lg px-4 py-3 text-white focus:border-grass/50 transition-all outline-none appearance-none"
+                      >
+                        <option value="public">Public (All Visitors)</option>
+                        <option value="members">Classified (Members Only)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="pt-4">
+                    <Button 
+                      type="submit"
+                      variant="grass" 
+                      className="w-full h-12 uppercase font-pixel tracking-[0.2em] text-xs" 
+                      disabled={loading}
+                    >
+                      {loading ? <Loader2 className="animate-spin mr-2" size={16} /> : <FileText className="mr-2" size={16} />}
+                      Initiate Data Transfer
+                    </Button>
+                  </div>
+                </form>
+              </Card>
+
+              {/* Resource Archive List */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                   <div className="w-2 h-2 bg-grass rounded-full animate-pulse" />
+                   <h3 className="text-sm font-pixel uppercase tracking-widest text-text-secondary">Knowledge Archive</h3>
                 </div>
 
-                <div className="pt-4">
-                  <Button variant="grass" className="w-full h-12 uppercase font-pixel tracking-[0.2em] text-xs" disabled={loading}>
-                    {loading ? <Loader2 className="animate-spin mr-2" size={16} /> : <FileText className="mr-2" size={16} />}
-                    Initiate Data Transfer
-                  </Button>
-                </div>
-              </form>
-            </Card>
+                {resourceLoading ? (
+                  <div className="flex items-center gap-2 text-text-secondary font-pixel text-[10px]">
+                    <Loader2 className="animate-spin" size={12} />
+                    Syncing Archive...
+                  </div>
+                ) : resources.length === 0 ? (
+                  <p className="text-xs text-text-secondary font-sans italic">No artifacts logged in the archive.</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3">
+                    {resources.map((resource) => (
+                      <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        key={resource._id}
+                        className="flex items-center justify-between p-4 bg-stone/10 border-2 border-border/30 rounded-lg group hover:border-grass/30 transition-all"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`p-2 bg-${resource.accent || 'sky'}/10 rounded-md`}>
+                            <FileText size={18} className={`text-${resource.accent || 'sky'}`} />
+                          </div>
+                          <div>
+                            <h4 className="text-white text-sm font-sans font-medium">{resource.title}</h4>
+                            <div className="flex items-center gap-3 mt-1">
+                              <span className="text-[9px] font-pixel text-text-secondary uppercase">{resource.type || 'DATA'}</span>
+                              <div className="w-1 h-1 bg-stone rounded-full" />
+                              <span className="text-[9px] font-pixel text-text-secondary uppercase">{resource.size || '0 MB'}</span>
+                              <div className="w-1 h-1 bg-stone rounded-full" />
+                              <Badge variant={resource.accessLevel === 'members' ? 'lava' : 'stone'} className="text-[8px] py-0 px-2 h-4">
+                                {resource.accessLevel === 'members' ? 'CLASSIFIED' : 'PUBLIC'}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <button
+                          onClick={() => handleDeleteResource(resource._id)}
+                          className="p-2 text-text-secondary hover:text-lava hover:bg-lava/10 rounded-lg transition-all"
+                          title="Purge Identity"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </motion.div>
       </AnimatePresence>

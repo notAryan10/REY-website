@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import Event from "@/models/Event";
+import { getUserFromSession, requireRole } from "@/lib/auth";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await dbConnect();
-    const event = await Event.findById(params.id);
+    const event = await Event.findById(id);
 
     if (!event) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    const session = await getServerSession(authOptions);
+    const session = await getUserFromSession();
     const userRole = session?.user?.role || "spectator";
 
     // If spectator, only allow public events and filter out workshops
@@ -33,17 +33,20 @@ export async function GET(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const { id } = await params;
+    const session = await getUserFromSession();
 
-    if (!session || session.user.role !== "architect") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    try {
+      requireRole(session, ["architect"]);
+    } catch (err) {
+      return NextResponse.json({ error: "Forbidden: Architect Clearance Required" }, { status: 403 });
     }
 
     await dbConnect();
-    const deletedEvent = await Event.findByIdAndDelete(params.id);
+    const deletedEvent = await Event.findByIdAndDelete(id);
 
     if (!deletedEvent) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });

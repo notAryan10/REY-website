@@ -3,6 +3,17 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
+import { getServerSession } from "next-auth";
+
+export function requireRole(session: any, allowedRoles: string[]) {
+  if (!session || !session.user || !allowedRoles.includes(session.user.role)) {
+    throw new Error("Unauthorized: Insufficient clearance level.");
+  }
+}
+
+export async function getUserFromSession() {
+  return await getServerSession(authOptions);
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [

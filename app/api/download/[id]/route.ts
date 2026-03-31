@@ -1,0 +1,41 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getUserFromSession, requireRole } from "@/lib/auth";
+import dbConnect from "@/lib/mongodb";
+import Resource from "@/models/Resource";
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = await params;
+    const session = await getUserFromSession();
+    
+    await dbConnect();
+    const resource = await Resource.findById(id);
+
+    if (!resource) {
+      return NextResponse.json({ error: "Resource not found" }, { status: 404 });
+    }
+
+    const userRole = session?.user?.role || "spectator";
+
+    // Enforcement Logic
+    // If resource is "members" only, and user is "spectator", DENY.
+    if (resource.accessLevel === "members" && userRole === "spectator") {
+      return NextResponse.json({ 
+        error: "Forbidden: Higher clearance required.", 
+        required: "Respawner+" 
+      }, { status: 403 });
+    }
+
+    // Standard Log
+    console.log(`DOWNLOAD GRANTED: ${resource.title} to ${session?.user?.email || "anonymous"}`);
+
+    // Securely redirect to internal storage link (Cloudinary)
+    return NextResponse.redirect(resource.fileUrl);
+  } catch (error) {
+    console.error("Download failure:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import Event from "@/models/Event";
+import { getUserFromSession, requireRole } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   try {
     await dbConnect();
-    const session = await getServerSession(authOptions);
+    const session = await getUserFromSession();
     const userRole = session?.user?.role || "spectator";
 
     let query: any = {};
@@ -28,10 +27,12 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getUserFromSession();
 
-    if (!session || session.user.role !== "architect") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    try {
+      requireRole(session, ["architect"]);
+    } catch (err) {
+      return NextResponse.json({ error: "Forbidden: Architect Clearance Required" }, { status: 403 });
     }
 
     await dbConnect();
@@ -39,7 +40,11 @@ export async function POST(req: NextRequest) {
     const { title, description, date, type, accent, location, players } = body;
 
     if (!title || !description || !date || !type) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json({ error: "Missing required fields: title, description, date, type" }, { status: 400 });
+    }
+
+    if (title.length < 3) {
+      return NextResponse.json({ error: "Invalid title: Min 3 characters required." }, { status: 400 });
     }
 
     // Business Logic: Workshops are always private
@@ -52,7 +57,7 @@ export async function POST(req: NextRequest) {
       type,
       accent: accent || "sky",
       isPublic,
-      createdBy: session.user.id,
+      createdBy: session!.user.id,
       location,
       players,
     });
