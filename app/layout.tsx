@@ -38,9 +38,7 @@ export default function RootLayout({
           
           <Navbar />
           
-          <PageTransition>
-            {children}
-          </PageTransition>
+          {children}
         </SessionProvider>
       </body>
     </html>
