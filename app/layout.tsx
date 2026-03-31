@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Press_Start_2P } from "next/font/google";
 import "./globals.css";
+import { Navbar } from "@/components/layout/Navbar";
 import { PageTransition } from "@/components/layout/PageTransition";
 
 const inter = Inter({
@@ -32,6 +33,8 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-text-primary overflow-x-hidden">
         {/* Global Texture Overlay */}
         <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[100] bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]" />
+        
+        <Navbar />
         
         <PageTransition>
           {children}

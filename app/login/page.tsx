@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Lock, Mail, Globe, Shield } from "lucide-react";
-import { Navbar } from "@/components/layout/Navbar";
 import { Section } from "@/components/layout/Section";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
@@ -11,7 +10,6 @@ import { Card } from "@/components/ui/Card";
 export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
       
       <main className="flex-1 flex flex-col items-center justify-center p-6 pt-32">
         <div className="w-full max-w-md">

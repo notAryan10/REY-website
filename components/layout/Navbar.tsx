@@ -31,17 +31,18 @@ export const Navbar = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out ${
         isScrolled
-          ? "bg-background/80 backdrop-blur-md border-b-2 border-border py-4"
-          : "bg-transparent py-6"
+          ? "bg-background/80 backdrop-blur-xl border-b-2 border-border/50 py-3 shadow-2xl"
+          : "bg-transparent py-8"
       }`}
     >
       <Container className="flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
           <motion.div
-            whileHover={{ rotate: 15 }}
-            className="w-10 h-10 bg-grass flex items-center justify-center pixel-border shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)]"
+            whileHover={{ rotate: 15, scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="w-10 h-10 bg-grass flex items-center justify-center pixel-border shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)] transition-transform"
           >
             <Rocket className="w-6 h-6 text-white" />
           </motion.div>

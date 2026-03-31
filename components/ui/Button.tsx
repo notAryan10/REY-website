@@ -46,11 +46,17 @@ export const Button = ({
       type={type}
       disabled={disabled}
       onClick={onClick}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
+      whileHover={{ 
+        scale: 1.08,
+        y: -2,
+        transition: { duration: 0.2, ease: "easeOut" }
+      }}
+      whileTap={{ scale: 0.92 }}
+      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className} shadow-[0_0_0_rgba(0,0,0,0)] hover:shadow-xl`}
     >
-      <span className="relative z-10">{children}</span>
+      <span className="relative z-10 flex items-center gap-2 transition-transform duration-200 group-hover:translate-x-0.5">
+        {children}
+      </span>
     </motion.button>
   );
 };
