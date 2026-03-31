@@ -2,7 +2,9 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Lock, BookOpen, GraduationCap, Clock, CheckCircle2 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
+import { Lock, BookOpen, Clock, CheckCircle2 } from "lucide-react";
 import { Section } from "@/components/layout/Section";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -11,32 +13,32 @@ import { Badge } from "@/components/ui/Badge";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 
 export default function WorkshopsPage() {
-  const workshops = [
-    {
-      title: "Mastering Redstone logic",
-      isLocked: false,
-      lessons: "12 Lessons",
-      level: "Intermediate",
-      time: "4h 20m",
-      accent: "sky" as const,
-    },
-    {
-      title: "Mega-Build Planning",
-      isLocked: true,
-      lessons: "24 Lessons",
-      level: "Advanced",
-      time: "8h 45m",
-      accent: "grass" as const,
-    },
-    {
-      title: "Command Block Mastery",
-      isLocked: true,
-      lessons: "18 Lessons",
-      level: "Elite",
-      time: "6h 15m",
-      accent: "lava" as const,
-    },
-  ];
+  const { data: session, status } = useSession();
+  const [workshops, setWorkshops] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchWorkshops = async () => {
+      try {
+        const res = await fetch("/api/workshops");
+        if (res.ok) {
+          const data = await res.json();
+          setWorkshops(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch workshops:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWorkshops();
+  }, []);
+
+  const userRole = session?.user?.role || "spectator";
+  
+  // Workshops are restricted to Respawner and Architect
+  const hasAccess = status === "authenticated" && (userRole === "respawner" || userRole === "architect");
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -44,70 +46,99 @@ export default function WorkshopsPage() {
         <Section title="Edu Workshops" subtitle="level up your skills" accent="sky">
           <ScrollReveal direction="up">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pt-8">
-              {workshops.map((workshop, i) => (
-                <Card key={i} accent={workshop.accent} className="flex flex-col h-full group relative overflow-hidden">
-                  {/* Locked UI Overlay */}
-                  {workshop.isLocked && (
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      whileHover={{ opacity: 1 }}
-                      className="absolute inset-0 bg-background/60 backdrop-blur-md z-20 flex flex-col items-center justify-center p-8 text-center space-y-6 transition-all duration-500 opacity-0 md:opacity-100"
-                    >
+              {loading ? (
+                [...Array(3)].map((_, i) => (
+                  <Card key={i} className="h-[450px] animate-pulse bg-stone/10 border-border/50">
+                    <div className="space-y-4">
+                      <div className="h-6 w-20 bg-stone/20 rounded" />
+                      <div className="h-10 w-3/4 bg-stone/20 rounded" />
+                      <div className="h-24 w-full bg-stone/20 rounded" />
+                    </div>
+                  </Card>
+                ))
+              ) : workshops.length > 0 ? (
+                workshops.map((workshop, i) => {
+                  const isLocked = !hasAccess;
+                  return (
+                  <Card key={i} accent={workshop.accent || "sky"} className="flex flex-col h-full group relative overflow-hidden">
+                    {/* Locked UI Overlay */}
+                    {isLocked && (
                       <motion.div 
-                        animate={{ 
-                          rotate: [12, -12, 12],
-                          scale: [1, 1.1, 1]
-                        }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                        className="p-4 bg-lava/20 border border-lava/30 scale-125"
+                        initial={{ opacity: 0 }}
+                        whileHover={{ opacity: 1 }}
+                        className="absolute inset-0 bg-background/80 backdrop-blur-xl z-20 flex flex-col items-center justify-center p-8 text-center space-y-6 transition-all duration-500 opacity-0 md:opacity-100"
                       >
-                         <Lock className="w-10 h-10 text-lava" />
+                        <motion.div 
+                          animate={{ 
+                            rotate: [12, -12, 12],
+                            scale: [1, 1.1, 1]
+                          }}
+                          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                          className="p-4 bg-lava/20 border border-lava/30 rounded-lg"
+                        >
+                           <Lock className="w-10 h-10 text-lava" />
+                        </motion.div>
+                        <div className="space-y-2">
+                           <h4 className="text-xl uppercase font-pixel tracking-tighter">Classified Content</h4>
+                           <p className="text-text-secondary text-[10px] uppercase font-pixel tracking-widest leading-loose">
+                             {status === "unauthenticated" ? "Join the club to unlock edu modules." : "Respawner clearance required."}
+                           </p>
+                        </div>
+                        {status === "unauthenticated" ? (
+                          <Link href="/register" className="w-full">
+                            <Button variant="lava" size="sm" className="w-full uppercase font-pixel text-[10px]">
+                              Join REY Club
+                            </Button>
+                          </Link>
+                        ) : (
+                          <div className="space-y-2 w-full">
+                            <Badge variant="lava" className="w-full justify-center py-2">Members Only</Badge>
+                            <p className="text-[8px] uppercase text-lava/60 font-pixel">Restricted Access</p>
+                          </div>
+                        )}
                       </motion.div>
-                      <div className="space-y-4">
-                         <h4 className="text-xl uppercase font-pixel tracking-tighter">Locked Content</h4>
-                         <p className="text-text-secondary text-xs uppercase font-pixel tracking-widest leading-loose">
-                           Access restricted to Respawner rank & above.
-                         </p>
-                      </div>
-                      <Button variant="lava" size="sm" className="w-full">
-                        Upgrade To Unlock
-                      </Button>
-                    </motion.div>
-                  )}
+                    )}
 
-                  <div className="space-y-6 flex-grow relative z-10">
-                    <div className="flex items-center justify-between">
-                      <Badge variant={workshop.accent}>{workshop.level}</Badge>
-                      <span className="text-[10px] font-pixel text-text-secondary uppercase">{workshop.lessons}</span>
-                    </div>
-                    
-                    <h3 className="text-xl uppercase leading-tight group-hover:text-white transition-colors">{workshop.title}</h3>
-                    
-                    <div className="grid grid-cols-2 gap-4 text-[10px] uppercase font-pixel tracking-widest text-text-secondary">
-                      <div className="flex items-center gap-2"><Clock size={12} className={`text-${workshop.accent}`} /> {workshop.time}</div>
-                      <div className="flex items-center gap-2"><CheckCircle2 size={12} className={`text-${workshop.accent}`} /> Premium</div>
-                    </div>
-                    
-                    <div className="pt-6 border-t border-border/50 flex flex-col gap-4">
-                      <div className="flex -space-x-2">
-                        {[...Array(4)].map((_, j) => (
-                          <div key={j} className="w-8 h-8 rounded-full border-2 border-card bg-stone/50 overflow-hidden" />
-                        ))}
-                        <div className="w-8 h-8 rounded-full border-2 border-card bg-stone/80 text-[8px] flex items-center justify-center text-white">+120</div>
+                    <div className="space-y-4 flex-grow relative z-10">
+                      <div className="flex items-center justify-between">
+                        <Badge variant={workshop.accent || "sky"}>Workshop</Badge>
+                        <span className="text-[10px] font-pixel text-text-secondary uppercase">
+                          {new Date(workshop.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        </span>
                       </div>
-                      <p className="text-[10px] uppercase text-text-secondary tracking-widest">// Architects Learning</p>
+                      
+                      <h3 className="text-xl uppercase leading-tight group-hover:text-white transition-colors">{workshop.title}</h3>
+                      
+                      <p className="text-sm text-text-secondary line-clamp-3 font-sans leading-relaxed">
+                        {workshop.description}
+                      </p>
+                      
+                      <div className="flex items-center gap-4 pt-4 text-[10px] uppercase font-pixel tracking-widest text-text-secondary border-t border-border/30">
+                        <div className="flex items-center gap-2"><Clock size={12} className="text-sky" /> Advanced</div>
+                        <div className="flex items-center gap-2"><CheckCircle2 size={12} className="text-grass" /> Certificate</div>
+                      </div>
                     </div>
-                  </div>
-                  
-                  {!workshop.isLocked && (
-                    <div className="pt-8 w-full relative z-10">
-                      <Button variant={workshop.accent} size="sm" className="w-full">
-                        Start Workshop <BookOpen className="ml-2 w-4 h-4" />
-                      </Button>
+                    
+                    {!isLocked && (
+                      <div className="pt-8 w-full relative z-10">
+                        <Button variant={workshop.accent || "sky"} size="sm" className="w-full uppercase font-pixel text-[10px] tracking-widest">
+                          Enter Module <BookOpen className="ml-2 w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Background Detail */}
+                    <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity rotate-12">
+                       <BookOpen size={120} />
                     </div>
-                  )}
-                </Card>
-              ))}
+                  </Card>
+                );
+              })
+            ) : (
+              <div className="col-span-full py-20 text-center border-2 border-dashed border-border/50 rounded-xl bg-stone/5">
+                 <p className="font-pixel text-text-secondary uppercase tracking-[0.2em] text-sm">No Active Workshops Found</p>
+              </div>
+            )}
             </div>
           </ScrollReveal>
         </Section>

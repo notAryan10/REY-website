@@ -2,42 +2,64 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Zap, Trophy, Users, Shield, Rocket, ExternalLink, Box } from "lucide-react";
+import { ArrowRight, Zap, Trophy, Users, Shield, Rocket, ExternalLink, Box, Calendar, FileText } from "lucide-react";
 import { Section } from "@/components/layout/Section";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import Link from "next/link";
 
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 
 export default function Home() {
+  const [latestEvent, setLatestEvent] = React.useState<any>(null);
+  const [latestProject, setLatestProject] = React.useState<any>(null);
+  const [latestResource, setLatestResource] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchFrontier = async () => {
+      try {
+        const [eventsRes, projectsRes, resourcesRes] = await Promise.all([
+          fetch("/api/events"),
+          fetch("/api/projects"),
+          fetch("/api/resources")
+        ]);
+
+        if (eventsRes.ok) {
+          const events = await eventsRes.json();
+          setLatestEvent(events[0]);
+        }
+        if (projectsRes.ok) {
+          const projects = await projectsRes.json();
+          setLatestProject(projects[0]);
+        }
+        if (resourcesRes.ok) {
+          const resources = await resourcesRes.json();
+          setLatestResource(resources[0]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch frontier data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFrontier();
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1">
         {/* SECTION 1 — HERO */}
         <Section className="pt-32 md:pt-48 pb-20 relative overflow-visible">
-          {/* Background Floating Island Concept Visual */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-[400px] opacity-20 pointer-events-none">
-            <motion.div
-              className="relative w-full h-full flex items-center justify-center animate-float gpu-accelerated"
-            >
+            <motion.div className="relative w-full h-full flex items-center justify-center animate-float">
               <div className="w-64 h-64 bg-grass/30 blur-3xl rounded-full" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 grid grid-cols-4 gap-4">
                 {[...Array(16)].map((_, i) => (
-                  <motion.div 
-                    key={i} 
-                    animate={{ 
-                      opacity: [0.3, 0.6, 0.3],
-                      scale: [1, 1.1, 1]
-                    }}
-                    transition={{ 
-                      duration: 2 + Math.random() * 2, 
-                      repeat: Infinity,
-                      delay: Math.random() * 2
-                    }}
-                    className="w-8 h-8 bg-stone/40 border border-white/10" 
-                  />
+                  <motion.div key={i} animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.1, 1] }} transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, delay: Math.random() * 2 }} className="w-8 h-8 bg-stone/40 border border-white/10" />
                 ))}
               </div>
             </motion.div>
@@ -45,35 +67,19 @@ export default function Home() {
 
           <ScrollReveal direction="up">
             <div className="flex flex-col items-center text-center space-y-8 max-w-4xl mx-auto relative z-10">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-              >
-                <h1 className="text-6xl md:text-9xl !leading-[0.8] text-white mb-4 uppercase tracking-tighter font-pixel drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
-                  R.E.Y
-                </h1>
-                <p className="text-grass font-pixel text-[10px] md:text-xs uppercase tracking-[0.3em] mb-8">
-                  Explore • Create • Level Up
-                </p>
-                <p className="text-text-secondary text-lg md:text-xl max-w-xl mx-auto leading-relaxed font-sans">
-                  The ultimate destination for digital architects and competitive pioneers.
-                </p>
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}>
+                <h1 className="text-6xl md:text-9xl !leading-[0.8] text-white mb-4 uppercase tracking-tighter font-pixel drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">R.E.Y</h1>
+                <p className="text-grass font-pixel text-[10px] md:text-xs uppercase tracking-[0.3em] mb-8">Explore • Create • Level Up</p>
+                <p className="text-text-secondary text-lg md:text-xl max-w-xl mx-auto leading-relaxed font-sans">The ultimate destination for digital architects and competitive pioneers.</p>
               </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="flex flex-wrap items-center justify-center gap-6 pt-4"
-              >
-                <Button variant="grass" size="lg" className="px-10">
-                  Explore Projects <ExternalLink className="ml-2 w-4 h-4" />
-                </Button>
-                <Button variant="secondary" size="lg" className="px-10">
-                  Join Club
-                </Button>
-              </motion.div>
+              <div className="flex flex-wrap items-center justify-center gap-6 pt-4">
+                <Link href="/gamejams">
+                  <Button variant="grass" size="lg" className="px-10">Explore Jams <ExternalLink className="ml-2 w-4 h-4" /></Button>
+                </Link>
+                <Link href="/register">
+                  <Button variant="secondary" size="lg" className="px-10">Join Club</Button>
+                </Link>
+              </div>
             </div>
           </ScrollReveal>
         </Section>
@@ -82,38 +88,51 @@ export default function Home() {
         <ScrollReveal direction="up" delay={0.2}>
           <Section title="The Frontier" subtitle="latest updates" accent="sky">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Card accent="lava">
-                <div className="space-y-4">
-                    <Badge variant="lava" icon={<Trophy size={10} />}>Upcoming Event</Badge>
-                    <h3 className="text-xl uppercase">Skywars: Origins</h3>
-                    <p className="text-text-secondary text-sm font-sans">
-                      The classic battle returns. Compete for the title of Sky Architect this Saturday.
-                    </p>
-                    <Button variant="ghost" size="sm" className="p-0 hover:bg-transparent text-lava">Learn More →</Button>
-                </div>
-              </Card>
+              {loading ? (
+                [...Array(3)].map((_, i) => <Card key={i} className="h-40 animate-pulse bg-stone/10 border-border/50"><div /></Card>)
+              ) : (
+                <>
+                  {/* LATEST EVENT */}
+                  <Card accent={latestEvent?.accent || "lava"}>
+                    <div className="space-y-4">
+                        <Badge variant={latestEvent?.accent || "lava"} icon={<Calendar size={10} />}>{latestEvent ? "Upcoming Event" : "Standby"}</Badge>
+                        <h3 className="text-xl uppercase truncate">{latestEvent?.title || "No Events Scheduled"}</h3>
+                        <p className="text-text-secondary text-sm font-sans line-clamp-2">
+                          {latestEvent ? `Join us on ${latestEvent.date} at ${latestEvent.location}.` : "Stay tuned for the next community gathering."}
+                        </p>
+                        <Link href="/events">
+                          <Button variant="ghost" size="sm" className="p-0 hover:bg-transparent text-text-secondary hover:text-white transition-colors">See All Events →</Button>
+                        </Link>
+                    </div>
+                  </Card>
 
-              <Card accent="grass">
-                <div className="space-y-4">
-                    <Badge variant="grass" icon={<Box size={10} />}>Featured Project</Badge>
-                    <h3 className="text-xl uppercase">The Great Library</h3>
-                    <p className="text-text-secondary text-sm font-sans">
-                      A massive community build project spanning 4,000 blocks. Contributed by 40+ members.
-                    </p>
-                    <Button variant="ghost" size="sm" className="p-0 hover:bg-transparent text-grass">View Gallery →</Button>
-                </div>
-              </Card>
+                  {/* LATEST PROJECT */}
+                  <Card accent={latestProject?.accent || "grass"}>
+                    <div className="space-y-4">
+                        <Badge variant={latestProject?.accent || "grass"} icon={<Box size={10} />}>{latestProject?.tag || "Latest Build"}</Badge>
+                        <h3 className="text-xl uppercase truncate">{latestProject?.title || "Project Alpha"}</h3>
+                        <p className="text-text-secondary text-sm font-sans line-clamp-2">
+                          {latestProject?.description || "Building the future of the R.E.Y community, one block at a time."}
+                        </p>
+                        <Button variant="ghost" size="sm" className="p-0 hover:bg-transparent text-text-secondary hover:text-white transition-colors">View Projects →</Button>
+                    </div>
+                  </Card>
 
-              <Card accent="sky">
-                <div className="space-y-4">
-                    <Badge variant="sky" icon={<Zap size={10} />}>Member Resources</Badge>
-                    <h3 className="text-xl uppercase">V1 Asset Pack</h3>
-                    <p className="text-text-secondary text-sm font-sans">
-                      Exclusive textures and models for our registered Respawners and Architects.
-                    </p>
-                    <Button variant="ghost" size="sm" className="p-0 hover:bg-transparent text-sky">Download Pack →</Button>
-                </div>
-              </Card>
+                  {/* LATEST RESOURCE */}
+                  <Card accent={latestResource?.accent || "sky"}>
+                    <div className="space-y-4">
+                        <Badge variant={latestResource?.accent || "sky"} icon={<Zap size={10} />}>News & Assets</Badge>
+                        <h3 className="text-xl uppercase truncate">{latestResource?.title || "Community Pack"}</h3>
+                        <p className="text-text-secondary text-sm font-sans line-clamp-2">
+                          {latestResource ? `${latestResource.type} Asset • ${latestResource.size}` : "Download the latest textures and schematics for your world."}
+                        </p>
+                        <Link href="/resources">
+                          <Button variant="ghost" size="sm" className="p-0 hover:bg-transparent text-text-secondary hover:text-white transition-colors">Asset Gallery →</Button>
+                        </Link>
+                    </div>
+                  </Card>
+                </>
+              )}
             </div>
           </Section>
         </ScrollReveal>
@@ -123,24 +142,9 @@ export default function Home() {
           <Section title="Ranking System" subtitle="your path forward" accent="sand">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
-                { 
-                  name: "Spectator", 
-                  variant: "stone" as const, 
-                  desc: "The entry point. Watch events, explore public builds, and learn the R.E.Y way.",
-                  capabilities: ["Watch live events", "Public world access", "Community chat"]
-                },
-                { 
-                  name: "Respawner", 
-                  variant: "sky" as const, 
-                  desc: "Active members who participate in events and contribute to small-scale projects.",
-                  capabilities: ["Event participation", "Member resources", "Build rights"]
-                },
-                { 
-                  name: "Core Architect", 
-                  variant: "lava" as const, 
-                  desc: "The elite. Leading megaprojects and mentoring the next generation of builders.",
-                  capabilities: ["Lead megaprojects", "Governance voting", "Exclusive rewards"]
-                }
+                { name: "Spectator", variant: "stone" as const, desc: "The entry point. Watch events, explore public builds, and learn the R.E.Y way.", capabilities: ["Watch live events", "Public world access", "Community chat"] },
+                { name: "Respawner", variant: "sky" as const, desc: "Active members who participate in events and contribute to small-scale projects.", capabilities: ["Event participation", "Member resources", "Build rights"] },
+                { name: "Core Architect", variant: "lava" as const, desc: "The elite. Leading megaprojects and mentoring the next generation of builders.", capabilities: ["Lead megaprojects", "Governance voting", "Exclusive rewards"] }
               ].map((role, i) => (
                 <Card key={i} accent={role.variant} className="flex flex-col h-full bg-card/50">
                   <div className="space-y-6 flex-grow">
@@ -148,9 +152,7 @@ export default function Home() {
                       <h3 className="text-xl uppercase">{role.name}</h3>
                       <Badge variant={role.variant}>{role.name === 'Core Architect' ? "ELITE" : "MEMBER"}</Badge>
                     </div>
-                    <p className="text-text-secondary text-sm font-sans">
-                      {role.desc}
-                    </p>
+                    <p className="text-text-secondary text-sm font-sans">{role.desc}</p>
                     <div className="space-y-2 pt-4">
                       <p className="text-[10px] uppercase text-text-secondary font-pixel tracking-widest">// Capabilities</p>
                       <ul className="space-y-2">
@@ -174,21 +176,14 @@ export default function Home() {
           <Section accent="grass" className="relative">
             <Card accent="grass" className="bg-grass/5 border-none p-12 md:p-24 text-center overflow-visible">
               <div className="max-w-2xl mx-auto space-y-8 relative z-10">
-                  <h2 className="text-4xl md:text-6xl uppercase leading-tight font-pixel">
-                    Join <span className="text-grass">R.E.Y</span>
-                  </h2>
-                  <p className="text-text-secondary text-lg font-sans">
-                    Become a part of the most ambitious digital collective. 
-                    Start your journey from Spectator to Core Architect today.
-                  </p>
+                  <h2 className="text-4xl md:text-6xl uppercase leading-tight font-pixel">Join <span className="text-grass">R.E.Y</span></h2>
+                  <p className="text-text-secondary text-lg font-sans">Become a part of the most ambitious digital collective. Start your journey from Spectator to Core Architect today.</p>
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                    <Button variant="grass" size="lg" className="w-full sm:w-auto px-16">
-                        Join The Club
-                    </Button>
+                    <Link href="/register">
+                      <Button variant="grass" size="lg" className="w-full sm:w-auto px-16">Join The Club</Button>
+                    </Link>
                   </div>
               </div>
-              
-              {/* Decorative Background Elements */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-grass/10 blur-3xl rounded-full -mr-32 -mt-32" />
               <div className="absolute bottom-0 left-0 w-64 h-64 bg-grass/10 blur-3xl rounded-full -ml-32 -mb-32" />
             </Card>
@@ -209,9 +204,7 @@ export default function Home() {
             </p>
             <div className="flex gap-8">
               {['Discord', 'Twitter', 'YouTube'].map(social => (
-                <a key={social} href="#" className="font-pixel text-[8px] uppercase text-text-secondary hover:text-white transition-colors">
-                  {social}
-                </a>
+                <a key={social} href="#" className="font-pixel text-[8px] uppercase text-text-secondary hover:text-white transition-colors">{social}</a>
               ))}
             </div>
           </div>

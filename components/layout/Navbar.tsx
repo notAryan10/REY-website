@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Rocket } from "lucide-react";
+import { Menu, X, Rocket, User, LogOut, Shield } from "lucide-react";
 import { Container } from "../ui/Container";
 import { Button } from "../ui/Button";
 
 export const Navbar = () => {
+  const { data: session, status } = useSession();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -76,14 +78,43 @@ export const Navbar = () => {
         </nav>
 
         <div className="flex items-center gap-4">
-          <Link href="/login" className="hidden sm:block">
-            <Button variant="ghost" size="sm">
-              Login
-            </Button>
-          </Link>
-          <Button variant="grass" size="sm">
-            Join Club
-          </Button>
+          {status === "authenticated" ? (
+            <div className="flex items-center gap-4">
+              <div className="hidden lg:flex flex-col items-end mr-2">
+                <span className="text-[10px] text-white font-pixel uppercase tracking-tighter truncate max-w-[120px]">
+                  {session.user?.name}
+                </span>
+                <span className="text-[8px] text-grass font-pixel uppercase opacity-80">
+                  {session.user?.role}
+                </span>
+              </div>
+              
+              <Link href="/dashboard" className="group">
+                <div className="w-8 h-8 rounded-full border border-border flex items-center justify-center bg-zinc-800/50 group-hover:border-grass transition-colors">
+                  <User size={16} className="text-text-secondary group-hover:text-white" />
+                </div>
+              </Link>
+
+              <button 
+                onClick={() => signOut()}
+                className="p-2 text-text-secondary hover:text-lava transition-colors group"
+                title="Log Out"
+              >
+                <LogOut size={18} className="group-hover:rotate-12 transition-transform" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link href="/login" className="hidden sm:block">
+                <Button variant="ghost" size="sm">
+                  Login
+                </Button>
+              </Link>
+              <Button variant="grass" size="sm">
+                Join Club
+              </Button>
+            </>
+          )}
 
           {/* Mobile Toggle */}
           <button

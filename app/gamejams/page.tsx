@@ -1,82 +1,91 @@
 "use client";
 
 import React from "react";
-import { Zap, Trophy, Clock, Swords } from "lucide-react";
+import { motion } from "framer-motion";
+import { Gamepad2, Trophy, ArrowRight, Code } from "lucide-react";
 import { Section } from "@/components/layout/Section";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 
 export default function GameJamsPage() {
-  const jams = [
-    {
-      title: "Megaproject Mashup",
-      status: "Ongoing",
-      statusVariant: "grass" as const,
-      timeLeft: "2 Days Left",
-      participants: "45 Teams",
-      prize: "Exclusive Rank + $250 Store Credit",
-      accent: "grass" as const,
-    },
-    {
-      title: "Redstone Innovation",
-      status: "Upcoming",
-      statusVariant: "sky" as const,
-      timeLeft: "Starts In 5 Days",
-      participants: "120 Registered",
-      prize: "Specialized Badge + Discord Role",
-      accent: "sky" as const,
-    },
-    {
-      title: "PVP Arena Design",
-      status: "Completed",
-      statusVariant: "stone" as const,
-      timeLeft: "Ended Oct 15",
-      participants: "80 Entries",
-      prize: "Winners Featured on Lobby",
-      accent: "stone" as const,
-    },
-  ];
+  const [jams, setJams] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchJams = async () => {
+      try {
+        const res = await fetch("/api/events");
+        if (res.ok) {
+          const data = await res.json();
+          setJams(data.filter((e: any) => e.type === "gamejam"));
+        }
+      } catch (err) {
+        console.error("Failed to fetch game jams:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJams();
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1 pt-24 pb-20">
-        <Section title="Game Jams" subtitle="competitive build challenges" accent="grass">
+        <Section title="Game Jams" subtitle="create. compete. win." accent="grass">
           <ScrollReveal direction="up">
-            <div className="space-y-8 pt-8">
-              {jams.map((jam, i) => (
-                <Card key={i} accent={jam.accent} className="relative overflow-hidden group">
-                  <div className="flex flex-col md:flex-row items-center gap-8">
-                    <div className={`p-6 bg-${jam.accent}/10 border border-${jam.accent}/20 rotate-3 group-hover:rotate-0 transition-all duration-500`}>
-                      <Swords className={`w-12 h-12 text-${jam.accent}`} />
-                    </div>
-                    
-                    <div className="flex-1 space-y-4 text-center md:text-left">
-                      <div className="flex flex-col md:flex-row items-center gap-4">
-                        <h3 className="text-2xl uppercase transition-colors group-hover:text-white">{jam.title}</h3>
-                        <Badge variant={jam.statusVariant}>{jam.status}</Badge>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pt-8">
+              {loading ? (
+                [...Array(3)].map((_, i) => (
+                  <Card key={i} className="h-80 animate-pulse bg-stone/10 border-border/50">
+                    <div />
+                  </Card>
+                ))
+              ) : jams.length > 0 ? (
+                jams.map((jam, i) => (
+                  <Card key={i} accent="grass" className="group h-full flex flex-col relative overflow-hidden bg-grass/5 border-grass/20">
+                    <div className="space-y-4 flex-grow relative z-10">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="grass">Annual Jam</Badge>
+                        <span className="text-[10px] font-pixel text-text-secondary uppercase">
+                          Starts {new Date(jam.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        </span>
                       </div>
                       
-                      <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-xs text-text-secondary uppercase font-pixel tracking-widest">
-                        <span className="flex items-center gap-2"><Clock size={14} className={`text-${jam.accent}`} /> {jam.timeLeft}</span>
-                        <span className="flex items-center gap-2"><Zap size={14} className={`text-${jam.accent}`} /> {jam.participants}</span>
-                      </div>
+                      <h3 className="text-2xl uppercase group-hover:text-white transition-colors leading-tight font-pixel tracking-tighter">{jam.title}</h3>
                       
-                      <div className="p-4 bg-white/5 border border-white/10 text-xs font-sans text-text-secondary group-hover:border-white/20 transition-colors">
-                        <span className={`text-${jam.accent} font-pixel uppercase text-[10px]`}>// PRIZE POOL:</span> {jam.prize}
+                      <p className="text-sm text-text-secondary font-sans leading-relaxed line-clamp-4">
+                        {jam.description}
+                      </p>
+
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-grass/20">
+                        <div className="flex items-center gap-2 text-[10px] uppercase font-pixel tracking-widest text-grass">
+                          <Trophy size={14} /> $500 Prize
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] uppercase font-pixel tracking-widest text-grass">
+                          <Code size={14} /> 48 Hours
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="w-full md:w-auto">
-                      <Button variant={jam.accent === 'stone' ? 'secondary' : jam.accent} className="w-full md:w-auto px-8">
-                        {jam.status === 'Completed' ? "View Results" : "Enter Jam"}
+                    <div className="pt-8 w-full relative z-10">
+                      <Button variant="grass" size="sm" className="w-full uppercase font-pixel text-[10px] tracking-widest">
+                        Submit Project <ArrowRight size={14} className="ml-2" />
                       </Button>
                     </div>
-                  </div>
-                </Card>
-              ))}
+
+                    <div className="absolute -bottom-6 -right-6 opacity-10 group-hover:opacity-20 transition-opacity rotate-12">
+                       <Gamepad2 size={120} className="text-grass" />
+                    </div>
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-full py-20 text-center border-2 border-dashed border-border/50 rounded-xl bg-stone/5">
+                   <p className="font-pixel text-text-secondary uppercase tracking-[0.2em] text-sm">No Active Game Jams Found</p>
+                </div>
+              )}
             </div>
           </ScrollReveal>
         </Section>
