@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Press_Start_2P } from "next/font/google";
 import "./globals.css";
+import { PageTransition } from "@/components/layout/PageTransition";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -24,9 +25,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${pixel.variable} h-full antialiased dark`}>
-      <body className="min-h-full flex flex-col bg-background text-text-primary">
-        {children}
+    <html
+      lang="en"
+      className={`${inter.variable} ${pixel.variable} h-full antialiased dark`}
+    >
+      <body className="min-h-full flex flex-col bg-background text-text-primary overflow-x-hidden">
+        {/* Global Texture Overlay */}
+        <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[100] bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]" />
+        
+        <PageTransition>
+          {children}
+        </PageTransition>
       </body>
     </html>
   );

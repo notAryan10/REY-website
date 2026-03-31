@@ -4,7 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 
 interface ButtonProps {
-  variant?: "primary" | "secondary" | "ghost" | "grass" | "lava" | "sky" | "sand";
+  variant?: "primary" | "secondary" | "ghost" | "grass" | "lava" | "sky" | "sand" | "stone";
   size?: "sm" | "md" | "lg";
   children: React.ReactNode;
   className?: string;
@@ -32,6 +32,7 @@ export const Button = ({
     lava: "bg-lava text-white hover:shadow-[0_0_15px_rgba(255,107,53,0.5)]",
     sky: "bg-sky text-white hover:shadow-[0_0_15px_rgba(91,192,235,0.5)]",
     sand: "bg-sand text-background hover:shadow-[0_0_15px_rgba(255,209,102,0.5)]",
+    stone: "bg-stone text-white border-2 border-border hover:bg-stone/80",
   };
 
   const sizes = {
