@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
 
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
+import FallingText from "@/components/ui/FallingText";
 
 export default function Home() {
   const [latestEvent, setLatestEvent] = React.useState<any>(null);
@@ -96,6 +97,22 @@ export default function Home() {
               </div>
             </div>
           </ScrollReveal>
+        </Section>
+
+        <Section className="py-20 bg-background/50 border-y border-border/20">
+          <Container>
+            <FallingText
+              text="R.E.Y — Respawn Every Year — is a community of digital architects, builders, and pioneers crafting the future of virtual worlds. Explore our creations, join our game jams, and level up your skills with us."
+              highlightWords={["R.E.Y", "architects", "builders", "pioneers", "future", "virtual", "worlds", "skills"]}
+              highlightClass="highlighted"
+              trigger="scroll"
+              backgroundColor="transparent"
+              wireframes={false}
+              gravity={0.56}
+              fontSize="2rem"
+              mouseConstraintStiffness={0.9}
+            />
+          </Container>
         </Section>
 
         {/* SECTION 2 — FEATURE CARDS */}
@@ -217,7 +234,7 @@ export default function Home() {
               <span className="text-lg text-white">R.E.Y</span>
             </div>
             <p className="text-text-secondary text-[10px] uppercase tracking-widest leading-loose font-pixel">
-              &copy; 2026 R.E.Y COLLECTIVE. NOT AN OFFICIAL MINECRAFT PRODUCT.<br />
+              &copy; 2026 R.E.Y CLUB.<br />
               BUILT FOR ARCHITECTS.
             </p>
             <div className="flex gap-8">

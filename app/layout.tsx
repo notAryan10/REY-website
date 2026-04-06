@@ -17,7 +17,7 @@ const pixel = Press_Start_2P({
 });
 
 export const metadata: Metadata = {
-  title: "REY - Minecraft Inspired Website",
+  title: "REY - Game Dev Club",
   description: "A premium, game-inspired UI system for the REY community.",
 };
 
