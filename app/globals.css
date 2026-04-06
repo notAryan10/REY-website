@@ -5,16 +5,25 @@
   --color-lava: #FF6B35;
   --color-sky: #5BC0EB;
   --color-sand: #FFD166;
-  --color-stone: #2E2E2E;
+  --color-stone: #242424;
   
-  --color-background: #0f0f0f;
-  --color-card: #1a1a1a;
-  --color-border: #2a2a2a;
+  --color-background: #0a0a0a;
+  --color-card: #141414;
+  --color-border: #1f1f1f;
   --color-text-primary: #ffffff;
-  --color-text-secondary: #aaaaaa;
+  --color-text-secondary: #949494;
 
   --font-pixel: "Press Start 2P", system-ui;
   --font-sans: "Inter", system-ui;
+
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
 }
 
 @layer base {
@@ -27,8 +36,22 @@
     @apply bg-background text-text-primary font-sans antialiased;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-pixel tracking-tighter;
+  h1 {
+    @apply font-pixel text-4xl md:text-5xl lg:text-6xl tracking-tight leading-normal uppercase text-white;
+    text-shadow: 0 4px 0 rgba(255,255,255,0.05);
+  }
+
+  h2 {
+    @apply font-pixel text-2xl md:text-3xl tracking-tight leading-normal uppercase text-white;
+    text-shadow: 0 2px 0 rgba(255,255,255,0.05);
+  }
+
+  h3 {
+    @apply font-pixel text-lg md:text-xl tracking-tight leading-normal uppercase;
+  }
+
+  body {
+    @apply bg-background text-text-primary font-sans antialiased text-base leading-relaxed;
   }
 }
 
@@ -38,11 +61,19 @@
   }
 
   .pixel-border {
-    @apply border-2 border-border;
+    @apply border-2 border-border transition-all duration-300;
   }
 
-  .glow-grass:hover { @apply shadow-[0_0_15px_rgba(76,175,80,0.5)]; }
-  .glow-lava:hover { @apply shadow-[0_0_15px_rgba(255,107,53,0.5)]; }
-  .glow-sky:hover { @apply shadow-[0_0_15px_rgba(91,192,235,0.5)]; }
-  .glow-sand:hover { @apply shadow-[0_0_15px_rgba(255,209,102,0.5)]; }
+  .glow-grass:hover { @apply shadow-[0_0_25px_rgba(76,175,80,0.4)]; border-color: var(--color-grass); }
+  .glow-lava:hover { @apply shadow-[0_0_25px_rgba(255,107,53,0.4)]; border-color: var(--color-lava); }
+  .glow-sky:hover { @apply shadow-[0_0_25px_rgba(91,192,235,0.4)]; border-color: var(--color-sky); }
+  .glow-sand:hover { @apply shadow-[0_0_25px_rgba(255,209,102,0.4)]; border-color: var(--color-sand); }
+  
+  .glass {
+    @apply bg-card/60 backdrop-blur-xl border border-white/5;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 10px currentColor;
+  }
 }

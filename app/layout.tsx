@@ -27,13 +27,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${pixel.variable} h-full antialiased dark`}
-    >
+    <html lang="en" className={`${inter.variable} ${pixel.variable} h-full antialiased dark`}>
       <body className="min-h-full flex flex-col bg-background text-text-primary overflow-x-hidden">
         <SessionProvider>
-          {/* Global Texture Overlay */}
           <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[100] bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]" />
           
           <Navbar />

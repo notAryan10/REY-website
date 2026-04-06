@@ -2,18 +2,24 @@
 
 import React from "react";
 import { Calendar, MapPin, Users, ArrowRight } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { socket } from "@/lib/socket";
 import { Section } from "@/components/layout/Section";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 
 export default function EventsPage() {
+  const { data: session } = useSession();
   const [events, setEvents] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
+    if (!socket.connected) {
+      socket.connect();
+    }
+
     const fetchEvents = async () => {
       try {
         const res = await fetch("/api/events");
@@ -30,6 +36,15 @@ export default function EventsPage() {
 
     fetchEvents();
   }, []);
+
+  const handleJoinEvent = (event: any) => {
+    if (session?.user?.id) {
+      socket.emit("xp:add", { userId: (session.user as any).id, action: "event_join" });
+      alert(`Joined ${event.title}! +20 XP incoming... ⚡`);
+    } else {
+      alert("Please log in to join events.");
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -75,17 +90,22 @@ export default function EventsPage() {
                     </div>
                     
                     <div className="pt-6 flex justify-end">
-                      <Button variant={event.accent || "lava"} size="sm" className="group/btn uppercase font-pixel text-[10px] tracking-widest">
+                      <Button 
+                        variant={event.accent || "lava"} 
+                        size="sm" 
+                        className="group/btn uppercase font-pixel text-[10px] tracking-widest"
+                        onClick={() => handleJoinEvent(event)}
+                      >
                         Join Event <ArrowRight size={14} className="ml-2 group-hover/btn:translate-x-1 transition-transform" />
                       </Button>
                     </div>
-                 </Card>
-              ))
-            ) : (
-              <div className="col-span-full py-20 text-center border-2 border-dashed border-border/50 rounded-xl bg-lava/5">
-                 <p className="font-pixel text-text-secondary uppercase tracking-[0.2em] text-sm">No Events Scheduled At This Time</p>
-              </div>
-            )}
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-full py-20 text-center border-2 border-dashed border-border/50 rounded-xl bg-lava/5">
+                   <p className="font-pixel text-text-secondary uppercase tracking-[0.2em] text-sm">No Events Scheduled At This Time</p>
+                </div>
+              )}
             </div>
           </ScrollReveal>
         </Section>

@@ -47,13 +47,17 @@ export const Button = ({
       disabled={disabled}
       onClick={onClick}
       whileHover={{ 
-        scale: 1.08,
+        scale: 1.05,
         y: -2,
         transition: { duration: 0.2, ease: "easeOut" }
       }}
-      whileTap={{ scale: 0.92 }}
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className} shadow-[0_0_0_rgba(0,0,0,0)] hover:shadow-xl`}
+      whileTap={{ scale: 0.95 }}
+      className={`
+        ${baseStyles} ${variants[variant]} ${sizes[size]} ${className}
+        group overflow-hidden
+      `}
     >
+      <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300" />
       <span className="relative z-10 flex items-center gap-2 transition-transform duration-200 group-hover:translate-x-0.5">
         {children}
       </span>

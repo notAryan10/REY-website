@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
-import { ArrowRight, Zap, Trophy, Users, Shield, Rocket, ExternalLink, Box, Calendar, FileText } from "lucide-react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import Image from "next/image";
+import { ArrowRight, Zap, Trophy, Users, Shield, Rocket, ExternalLink, Box, Calendar, FileText, ChevronRight } from "lucide-react";
 import { Section } from "@/components/layout/Section";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +18,9 @@ export default function Home() {
   const [latestProject, setLatestProject] = React.useState<any>(null);
   const [latestResource, setLatestResource] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 500], [0, 200]);
+  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
 
   React.useEffect(() => {
     const fetchFrontier = async () => {
@@ -53,16 +57,26 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <main className="flex-1">
         {/* SECTION 1 — HERO */}
-        <Section className="pt-32 md:pt-48 pb-20 relative overflow-visible">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-[400px] opacity-20 pointer-events-none">
-            <motion.div className="relative w-full h-full flex items-center justify-center animate-float">
-              <div className="w-64 h-64 bg-grass/30 blur-3xl rounded-full" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 grid grid-cols-4 gap-4">
-                {[...Array(16)].map((_, i) => (
-                  <motion.div key={i} animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.1, 1] }} transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, delay: Math.random() * 2 }} className="w-8 h-8 bg-stone/40 border border-white/10" />
-                ))}
-              </div>
-            </motion.div>
+        <Section className="min-h-screen pt-32 md:pt-48 pb-20 relative overflow-hidden flex items-center">
+          <motion.div 
+            style={{ y: y1, opacity }}
+            className="absolute inset-0 z-0"
+          >
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background z-10" />
+            <Image 
+              src="/hero.png" 
+              alt="REY Hero" 
+              fill 
+              priority
+              className="object-cover opacity-40 scale-110"
+              quality={90}
+            />
+          </motion.div>
+
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-6xl h-[600px] opacity-10 pointer-events-none z-0">
+            <div className="relative w-full h-full flex items-center justify-center">
+              <div className="w-[500px] h-[500px] bg-grass/20 blur-[120px] rounded-full animate-pulse" />
+            </div>
           </div>
 
           <ScrollReveal direction="up">
@@ -107,14 +121,18 @@ export default function Home() {
                   </Card>
 
                   {/* LATEST PROJECT */}
-                  <Card accent={latestProject?.accent || "grass"}>
+                  <Card accent={latestProject?.accent || "grass"} className="group/card relative overflow-hidden">
                     <div className="space-y-4">
                         <Badge variant={latestProject?.accent || "grass"} icon={<Box size={10} />}>{latestProject?.tag || "Latest Build"}</Badge>
-                        <h3 className="text-xl uppercase truncate">{latestProject?.title || "Project Alpha"}</h3>
-                        <p className="text-text-secondary text-sm font-sans line-clamp-2">
+                        <h3 className="text-xl uppercase truncate text-white">{latestProject?.title || "Project Alpha"}</h3>
+                        <p className="text-text-secondary text-sm font-sans line-clamp-2 leading-relaxed">
                           {latestProject?.description || "Building the future of the R.E.Y community, one block at a time."}
                         </p>
-                        <Button variant="ghost" size="sm" className="p-0 hover:bg-transparent text-text-secondary hover:text-white transition-colors">View Projects →</Button>
+                        <Link href="/projects">
+                          <Button variant="ghost" size="sm" className="p-0 hover:bg-transparent text-text-secondary hover:text-white transition-colors">
+                            Explore Assets <ChevronRight size={14} className="ml-1 inline-block group-hover/card:translate-x-1 transition-transform" />
+                          </Button>
+                        </Link>
                     </div>
                   </Card>
 

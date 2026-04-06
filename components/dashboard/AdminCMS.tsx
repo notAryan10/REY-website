@@ -3,11 +3,14 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Upload, Trash2, Calendar, FileText, Check, AlertCircle, Loader2 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { socket } from "@/lib/socket";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 
 export function AdminCMS() {
+  const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<"events" | "resources">("events");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -113,6 +116,12 @@ export function AdminCMS() {
 
       if (res.ok) {
         setStatus({ type: "success", message: "Resource uploaded successfully! 📁" });
+        
+        // Trigger XP Reward
+        if (session?.user?.id) {
+          socket.emit("xp:add", { userId: session.user.id, action: "project_upload" });
+        }
+        
         setResourceForm({ title: "", file: null, eventId: "", accessLevel: "public", accent: "sky" });
         fetchResources(); // Refresh archive list
       } else {

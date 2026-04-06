@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/Button";
 
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 import { AdminCMS } from "@/components/dashboard/AdminCMS";
+import { UserXP } from "@/components/ui/UserXP";
+import { LeaderboardCard } from "@/components/dashboard/LeaderboardCard";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
@@ -56,16 +58,23 @@ export default function DashboardPage() {
                 transition={{ duration: 0.5 }}
                 className="lg:col-span-1 space-y-6"
               >
-                 <Card accent="sky" className="text-center space-y-6">
-                    <div className="mx-auto w-24 h-24 bg-sky/10 border-2 border-sky/30 rounded-full flex items-center justify-center relative">
-                       <User size={48} className="text-sky" />
-                       <div className="absolute -bottom-2 -right-2 bg-grass p-2 rounded-full border-2 border-card">
-                          <Zap size={16} className="text-white" />
-                       </div>
+                 <Card accent="sky" className="text-center space-y-8 p-8 bg-card/40 backdrop-blur-md border-2 hover:shadow-[0_0_30px_rgba(91,192,235,0.15)] transition-all duration-500">
+                    <div className="mx-auto w-28 h-28 bg-sky/10 border-2 border-sky/30 rounded-sm flex items-center justify-center relative group-hover:border-sky transition-colors">
+                       <User size={56} className="text-sky/80 group-hover:text-sky transition-colors" />
+                       <motion.div 
+                         initial={{ scale: 0 }}
+                         animate={{ scale: 1 }}
+                         className="absolute -bottom-2 -right-2 bg-grass p-2.5 rounded-sm border-2 border-card shadow-lg"
+                       >
+                          <Zap size={18} className="text-white" />
+                       </motion.div>
                     </div>
-                    <div>
-                       <h3 className="text-xl uppercase">{userName}</h3>
-                       <Badge variant="sky">{userRole} ⚡</Badge>
+                    <div className="space-y-4">
+                       <h3 className="text-2xl uppercase tracking-tighter text-white">{userName}</h3>
+                       <div className="flex flex-col items-center gap-3">
+                         <Badge variant="sky" className="px-4 py-1.5">{userRole}</Badge>
+                         <UserXP level={4} xp={750} nextLevelXp={1000} showDetails />
+                       </div>
                     </div>
                     <div className="pt-4 border-t border-border/50 space-y-4">
                        <Button variant="ghost" size="sm" className="w-full justify-start">
@@ -118,27 +127,33 @@ export default function DashboardPage() {
                  </div>
 
                  <ScrollReveal direction="up">
-                    <div className="space-y-4">
-                       <h3 className="text-lg uppercase font-pixel tracking-tighter">Your Active Quests</h3>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                        <div className="space-y-4">
-                          {quests.length > 0 ? (
-                            quests.map((quest: any, i: number) => (
-                              <div key={i} className="flex items-center justify-between p-4 bg-stone/20 border-2 border-border transition-all duration-300 hover:border-sky/50 hover:bg-stone/30 text-white group cursor-pointer">
-                                 <div className="flex items-center gap-4">
-                                    <Shield size={20} className="text-sky group-hover:scale-110 transition-transform" />
-                                    <div>
-                                       <p className="text-sm font-sans">{quest.title}</p>
-                                       <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary">{quest.reward}</p>
+                          <h3 className="text-lg uppercase font-pixel tracking-tighter">Your Active Quests</h3>
+                          <div className="space-y-4">
+                             {quests.length > 0 ? (
+                               quests.map((quest: any, i: number) => (
+                                 <div key={i} className="flex items-center justify-between p-4 bg-stone/20 border-2 border-border transition-all duration-300 hover:border-sky/50 hover:bg-stone/30 text-white group cursor-pointer">
+                                    <div className="flex items-center gap-4">
+                                       <Shield size={20} className="text-sky group-hover:scale-110 transition-transform" />
+                                       <div>
+                                          <p className="text-sm font-sans">{quest.title}</p>
+                                          <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary">{quest.reward}</p>
+                                       </div>
                                     </div>
+                                    <Badge variant={quest.status === "Reviewing" ? "sand" : quest.status === "Completed" ? "grass" : "sky"}>{quest.status}</Badge>
                                  </div>
-                                 <Badge variant={quest.status === "Reviewing" ? "sand" : quest.status === "Completed" ? "grass" : "sky"}>{quest.status}</Badge>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="p-8 text-center border-2 border-dashed border-border/50 text-text-secondary font-pixel text-xs uppercase tracking-widest">
-                               No Active Quests Found
-                            </div>
-                          )}
+                               ))
+                             ) : (
+                               <div className="p-8 text-center border-2 border-dashed border-border/50 text-text-secondary font-pixel text-xs uppercase tracking-widest">
+                                  No Active Quests Found
+                                </div>
+                             )}
+                          </div>
+                       </div>
+                       
+                       <div className="space-y-4">
+                          <LeaderboardCard />
                        </div>
                     </div>
                  </ScrollReveal>

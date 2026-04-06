@@ -61,7 +61,7 @@ export default function ResourcesPage() {
                     <h3 className="text-xl font-pixel uppercase tracking-widest text-text-secondary bg-zinc-800/20 px-4 py-2 border-l-4 border-sky">Public Archives</h3>
                     <Badge variant="sky" icon={<Globe size={12} />}>Open Access</Badge>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                     {loading ? (
                        [...Array(3)].map((_, i) => (
                          <Card key={i} className="h-32 animate-pulse bg-stone/10 border-border/50">

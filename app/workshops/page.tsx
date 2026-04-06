@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Lock, BookOpen, Clock, CheckCircle2 } from "lucide-react";
+import { socket } from "@/lib/socket";
 import { Section } from "@/components/layout/Section";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +19,9 @@ export default function WorkshopsPage() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
+    if (!socket.connected) {
+      socket.connect();
+    }
     const fetchWorkshops = async () => {
       try {
         const res = await fetch("/api/workshops");
@@ -38,7 +42,15 @@ export default function WorkshopsPage() {
   const userRole = session?.user?.role || "spectator";
   
   // Workshops are restricted to Respawner and Architect
+  // Workshops are restricted to Respawner and Architect
   const hasAccess = status === "authenticated" && (userRole === "respawner" || userRole === "architect");
+
+  const handleAttendWorkshop = (workshop: any) => {
+    if (session?.user?.id) {
+       socket.emit("xp:add", { userId: (session.user as any).id, action: "workshop_attend" });
+       alert(`Entering ${workshop.title}... +30 XP gained! 📚`);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -121,7 +133,12 @@ export default function WorkshopsPage() {
                     
                     {!isLocked && (
                       <div className="pt-8 w-full relative z-10">
-                        <Button variant={workshop.accent || "sky"} size="sm" className="w-full uppercase font-pixel text-[10px] tracking-widest">
+                        <Button 
+                          onClick={() => handleAttendWorkshop(workshop)}
+                          variant={workshop.accent || "sky"} 
+                          size="sm" 
+                          className="w-full uppercase font-pixel text-[10px] tracking-widest"
+                        >
                           Enter Module <BookOpen className="ml-2 w-4 h-4" />
                         </Button>
                       </div>

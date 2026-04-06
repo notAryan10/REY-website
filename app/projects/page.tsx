@@ -4,6 +4,7 @@ import React from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Gamepad2, ExternalLink, PlusCircle, User, Loader2, Rocket, Beaker } from "lucide-react";
+import { socket } from "@/lib/socket";
 import { Section } from "@/components/layout/Section";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -42,6 +43,9 @@ export default function ProjectsPage() {
   };
 
   React.useEffect(() => {
+    if (!socket.connected) {
+      socket.connect();
+    }
     fetchProjects();
   }, []);
 
@@ -66,6 +70,10 @@ export default function ProjectsPage() {
         });
         setShowForm(false);
         fetchProjects();
+        
+        if (session?.user?.id) {
+           socket.emit("xp:add", { userId: (session.user as any).id, action: "project_upload" });
+        }
       } else {
         const error = await res.json();
         alert(error.error || "Failed to submit project");
