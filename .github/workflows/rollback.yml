@@ -1,0 +1,57 @@
+name: CI & Auto-Rollback
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  check-and-rollback:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Checks
+        id: checks
+        run: |
+          set -e
+          echo "▶ Running Lint..."
+          npm run lint
+          echo "▶ Running Build..."
+          npm run build
+          echo "▶ Running GSD Validation..."
+          bash scripts/validate-all.sh
+
+      - name: Rollback on Failure
+        if: failure()
+        run: |
+          echo "❌ Checks failed! Initiating rollback..."
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Revert ONLY the last commit that was pushed
+          # If multiple commits were pushed, this only reverts HEAD.
+          # To revert a range, more complex logic using github.event.before would be needed.
+          git revert HEAD --no-edit
+          
+          # Commit message includes [skip ci] to prevent recursive builds
+          git commit --amend -m "Revert \"$(git log -1 --format=%s HEAD@{1})\" due to failed CI [skip ci]"
+          
+          echo "Pushing revert commit..."
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
