@@ -20,8 +20,7 @@ export async function GET(
 
     const userRole = session?.user?.role || "spectator";
 
-    // Enforcement Logic
-    // If resource is "members" only, and user is "spectator", DENY.
+
     if (resource.accessLevel === "members" && userRole === "spectator") {
       return NextResponse.json({ 
         error: "Forbidden: Higher clearance required.", 
@@ -29,10 +28,8 @@ export async function GET(
       }, { status: 403 });
     }
 
-    // Standard Log
     console.log(`DOWNLOAD GRANTED: ${resource.title} to ${session?.user?.email || "anonymous"}`);
 
-    // Securely redirect to internal storage link (Cloudinary)
     return NextResponse.redirect(resource.fileUrl);
   } catch (error) {
     console.error("Download failure:", error);
