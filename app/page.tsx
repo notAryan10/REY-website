@@ -234,7 +234,7 @@ export default function Home() {
               <span className="text-lg text-white">R.E.Y</span>
             </div>
             <p className="text-text-secondary text-[10px] uppercase tracking-widest leading-loose font-pixel">
-              &copy; 2026 R.E.Y CLUB.<br />
+              &copy; 2026 R.E.Y COLLECTIVE. NOT AN OFFICIAL MINECRAFT PRODUCT.<br />
               BUILT FOR ARCHITECTS.
             </p>
             <div className="flex gap-8">

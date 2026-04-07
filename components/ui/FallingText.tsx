@@ -78,6 +78,9 @@ const FallingText: React.FC<FallingTextProps> = ({
       return;
     }
 
+    // Lock the container height to prevent collapse when words become absolute
+    containerRef.current.style.height = `${height}px`;
+
     const engine = Engine.create();
     engine.world.gravity.y = gravity;
     // Increase iterations for much better collision stability

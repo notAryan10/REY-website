@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Rocket, User, LogOut, Shield, ChevronRight, Trophy } from "lucide-react";
+import { Menu, X, Rocket, User, LogOut, ChevronRight, Trophy } from "lucide-react";
 import { Container } from "../ui/Container";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
@@ -84,66 +84,74 @@ export const Navbar = () => {
 
         <div className="flex items-center gap-4">
           {status === "authenticated" ? (
-            <div className="flex items-center gap-6">
-              <div className="hidden lg:flex flex-col items-end">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] text-white font-pixel uppercase tracking-tighter truncate max-w-[120px]">
-                    {session.user?.name}
-                  </span>
-                  <Badge variant={session.user?.role === 'architect' ? 'lava' : session.user?.role === 'respawner' ? 'sky' : 'stone'}>
-                    {session.user?.role}
-                  </Badge>
+            <div className="flex items-center gap-8">
+              {/* Profile HUD Section */}
+              <div className="hidden lg:flex items-center gap-4 py-1 px-3 bg-zinc-900/40 border border-border/20 rounded-sm">
+                <div className="flex flex-col gap-1 pr-4 border-r border-border/10">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-white font-pixel uppercase tracking-tighter truncate max-w-[100px]">
+                      {session.user?.name}
+                    </span>
+                    <Badge variant={session.user?.role === 'architect' ? 'lava' : session.user?.role === 'respawner' ? 'sky' : 'stone'} className="!px-1.5 !py-0.5 !text-[7px]">
+                      {session.user?.role}
+                    </Badge>
+                  </div>
+                  <UserXP level={4} xp={750} nextLevelXp={1000} />
                 </div>
-                <UserXP level={4} xp={750} nextLevelXp={1000} />
+                
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsLeaderboardOpen(!isLeaderboardOpen)}
+                    className={`w-9 h-9 flex items-center justify-center rounded-sm border transition-all duration-300 ${
+                      isLeaderboardOpen 
+                        ? "border-sand bg-sand/10 text-sand shadow-[0_0_15px_rgba(255,209,102,0.3)]" 
+                        : "border-border/30 text-text-secondary hover:border-sand hover:text-sand hover:bg-sand/5"
+                    }`}
+                    title="Leaderboard"
+                  >
+                    <Trophy size={16} />
+                  </button>
+
+                  <Link href="/dashboard" className="group">
+                    <div className="w-9 h-9 rounded-sm border border-border/30 flex items-center justify-center bg-zinc-900/40 group-hover:border-grass group-hover:bg-grass/5 group-hover:shadow-[0_0_15px_rgba(76,175,80,0.2)] transition-all duration-300">
+                      <User size={16} className="text-text-secondary group-hover:text-white" />
+                    </div>
+                  </Link>
+
+                  <button 
+                    onClick={() => signOut()}
+                    className="w-9 h-9 flex items-center justify-center text-text-secondary hover:text-lava hover:bg-lava/5 rounded-sm border border-transparent hover:border-lava/20 transition-all duration-300 group"
+                    title="Log Out"
+                  >
+                    <LogOut size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                  </button>
+                </div>
               </div>
               
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setIsLeaderboardOpen(!isLeaderboardOpen)}
-                  className={`w-10 h-10 flex items-center justify-center rounded-sm border-2 transition-all duration-300 ${
-                    isLeaderboardOpen 
-                      ? "border-sand bg-sand/10 text-sand shadow-[0_0_15px_rgba(255,209,102,0.3)]" 
-                      : "border-border text-text-secondary hover:border-sand hover:text-sand"
-                  }`}
-                  title="Leaderboard"
-                >
-                  <Trophy size={18} />
-                </button>
-
-                <Link href="/dashboard" className="group">
-                  <div className="w-10 h-10 rounded-sm border-2 border-border flex items-center justify-center bg-zinc-900/80 group-hover:border-grass group-hover:shadow-[0_0_15px_rgba(76,175,80,0.3)] transition-all duration-300">
-                    <User size={18} className="text-text-secondary group-hover:text-white" />
-                  </div>
-                </Link>
-
-                <button 
-                  onClick={() => signOut()}
-                  className="w-10 h-10 flex items-center justify-center text-text-secondary hover:text-lava transition-colors group"
-                  title="Log Out"
-                >
-                  <LogOut size={20} className="group-hover:rotate-12 transition-transform" />
-                </button>
+              {/* Authenticated Tablet/Mobile View Summary */}
+              <div className="lg:hidden flex items-center gap-3">
+                <Badge variant="grass" className="font-pixel text-[8px]">LVL 4</Badge>
               </div>
             </div>
           ) : (
-            <>
+            <div className="flex items-center gap-3">
               <Link href="/login" className="hidden sm:block">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="text-[10px] font-pixel">
                   Login
                 </Button>
               </Link>
-              <Button variant="grass" size="sm">
+              <Button variant="grass" size="sm" className="text-[10px] font-pixel px-6">
                 Join Club
               </Button>
-            </>
+            </div>
           )}
 
           {/* Mobile Toggle */}
           <button
-            className="md:hidden text-white"
+            className="md:hidden text-white w-10 h-10 flex items-center justify-center border-2 border-border/30 hover:border-grass transition-colors"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            {isMobileMenuOpen ? <X /> : <Menu />}
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </Container>

@@ -1,5 +1,8 @@
 import { io } from "socket.io-client";
 
-export const socket = io("http://localhost:4000", {
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || (typeof window !== "undefined" ? undefined : "http://localhost:3000");
+
+export const socket = io(SOCKET_URL as any, {
     autoConnect: false,
 });
+

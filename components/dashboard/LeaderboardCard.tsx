@@ -42,7 +42,7 @@ export function LeaderboardCard() {
           {leaders.map((user, i) => (
             <motion.div
               layout
-              key={user.name}
+              key={user._id || `user-${i}`}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }}
