@@ -9,27 +9,45 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 
+import { EventManagementModal } from "@/components/events/EventManagementModal";
+import { useSession } from "next-auth/react";
+
 export default function GameJamsPage() {
+  const { data: session } = useSession();
   const [jams, setJams] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [managingJam, setManagingJam] = React.useState<any>(null);
+
+  const fetchJams = async () => {
+    try {
+      const res = await fetch("/api/events");
+      if (res.ok) {
+        const data = await res.json();
+        setJams(data.filter((e: any) => e.type === "gamejam"));
+      }
+    } catch (err) {
+      console.error("Failed to fetch game jams:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   React.useEffect(() => {
-    const fetchJams = async () => {
-      try {
-        const res = await fetch("/api/events");
-        if (res.ok) {
-          const data = await res.json();
-          setJams(data.filter((e: any) => e.type === "gamejam"));
-        }
-      } catch (err) {
-        console.error("Failed to fetch game jams:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchJams();
   }, []);
+
+  const handleAction = (jam: any) => {
+    if (session?.user?.role === "architect") {
+      setManagingJam(jam);
+    } else {
+      // Regular user action
+      alert("Project submission system coming soon! ⚡");
+    }
+  };
+
+  const handleUpdate = (updated: any) => {
+    setJams(jams.map(j => j._id === updated._id ? updated : j));
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -48,7 +66,7 @@ export default function GameJamsPage() {
                   <Card key={i} accent="grass" className="group h-full flex flex-col relative overflow-hidden bg-grass/5 border-grass/20">
                     <div className="space-y-4 flex-grow relative z-10">
                       <div className="flex items-center justify-between">
-                        <Badge variant="grass">Annual Jam</Badge>
+                        <Badge variant="grass">{jam.type}</Badge>
                         <span className="text-[10px] font-pixel text-text-secondary uppercase">
                           Starts {new Date(jam.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                         </span>
@@ -61,18 +79,38 @@ export default function GameJamsPage() {
                       </p>
 
                       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-grass/20">
-                        <div className="flex items-center gap-2 text-[10px] uppercase font-pixel tracking-widest text-grass">
-                          <Trophy size={14} /> $500 Prize
+                        <div className="flex items-center gap-2 text-[10px] uppercase font-pixel tracking-widest text-text-secondary">
+                          <Trophy size={14} className="text-grass" /> {jam.players || "Open Entry"}
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] uppercase font-pixel tracking-widest text-grass">
-                          <Code size={14} /> 48 Hours
-                        </div>
+                        {jam.submissionDate && (
+                          <div className={`flex items-center gap-2 text-[10px] uppercase font-pixel tracking-widest ${new Date(jam.submissionDate) < new Date() ? 'text-text-secondary opacity-50' : 'text-lava animate-pulse'}`}>
+                            <Code size={14} /> {new Date(jam.submissionDate) < new Date() ? 'Ended' : 'Closing Soon'}
+                          </div>
+                        )}
                       </div>
+
+                      {jam.submissionDate && (
+                        <div className="mt-4 p-2 bg-grass/10 border border-grass/20 rounded text-[10px] font-pixel text-grass/80">
+                          Deadline: {new Date(jam.submissionDate).toLocaleString(undefined, { 
+                            month: 'short', 
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      )}
                     </div>
                     
                     <div className="pt-8 w-full relative z-10">
-                      <Button variant="grass" size="sm" className="w-full uppercase font-pixel text-[10px] tracking-widest">
-                        Submit Project <ArrowRight size={14} className="ml-2" />
+                      <Button 
+                        variant={new Date(jam.submissionDate) < new Date() ? "secondary" : "grass"}
+                        size="sm" 
+                        className="w-full uppercase font-pixel text-[10px] tracking-widest"
+                        onClick={() => handleAction(jam)}
+                        disabled={new Date(jam.submissionDate) < new Date() && session?.user?.role !== "architect"}
+                      >
+                        {session?.user?.role === "architect" ? "Manage Jam" : (new Date(jam.submissionDate) < new Date() ? "Submissions Closed" : "Submit Project")}
+                        <ArrowRight size={14} className="ml-2" />
                       </Button>
                     </div>
 
@@ -90,6 +128,14 @@ export default function GameJamsPage() {
           </ScrollReveal>
         </Section>
       </main>
+
+      {managingJam && (
+        <EventManagementModal 
+          event={managingJam} 
+          onClose={() => setManagingJam(null)} 
+          onUpdate={handleUpdate}
+        />
+      )}
     </div>
   );
 }
