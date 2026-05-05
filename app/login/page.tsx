@@ -83,7 +83,7 @@ function LoginForm() {
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-[10px] uppercase font-pixel tracking-widest text-stone hover:text-white cursor-pointer transition-colors underline">Forgot Key?</p>
+        <Link href="/forgot-password" className="text-[10px] uppercase font-pixel tracking-widest text-stone hover:text-white transition-colors underline">Forgot Key?</Link>
         <Link href="/register" className="text-[10px] uppercase font-pixel tracking-widest text-grass hover:text-white transition-colors underline">Create Account</Link>
       </div>
 

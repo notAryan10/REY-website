@@ -11,7 +11,8 @@ const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
 const port = process.env.PORT || 3000;
 
-const app = next({ dev, hostname, port });
+console.log("📍 Current Working Directory:", process.cwd());
+const app = next({ dev, hostname, port, dir: process.cwd() });
 const handle = app.getRequestHandler();
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -25,8 +26,11 @@ if (!MONGODB_URI) {
 const UserSchema = new mongoose.Schema({
   name: String,
   email: String,
+  password: { type: String, select: false },
   role: String,
   xp: { type: Number, default: 0 },
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
 });
 
 const User = mongoose.models.User || mongoose.model("User", UserSchema);

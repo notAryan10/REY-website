@@ -30,7 +30,7 @@ export const authOptions: NextAuthOptions = {
 
         await dbConnect();
 
-        const user = await User.findOne({ email: credentials.email }).select("+password");
+        const user = await User.findOne({ email: credentials.email.toLowerCase() }).select("+password");
 
         if (!user) {
           throw new Error("Invalid email or password");
