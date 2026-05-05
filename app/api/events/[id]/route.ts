@@ -78,29 +78,45 @@ export async function PATCH(
 
     await dbConnect();
     const body = await req.json();
-    const { title, description, date, type, accent, location, players, submissionDate, leaderboard } = body;
+    
+    // Construct update object with only provided fields
+    const updateData: any = {};
+    if (body.title !== undefined) updateData.title = body.title;
+    if (body.description !== undefined) updateData.description = body.description;
+    if (body.date !== undefined) {
+      const d = new Date(body.date);
+      if (!isNaN(d.getTime())) updateData.date = d;
+    }
 
-    const event = await Event.findById(id);
-    if (!event) {
+    if (body.type !== undefined) updateData.type = body.type;
+    if (body.accent !== undefined) updateData.accent = body.accent;
+    if (body.location !== undefined) updateData.location = body.location;
+    if (body.players !== undefined) updateData.players = body.players;
+    
+    if (body.submissionDate !== undefined) {
+      if (body.submissionDate === "" || body.submissionDate === null) {
+        updateData.submissionDate = null;
+      } else {
+        const d = new Date(body.submissionDate);
+        if (!isNaN(d.getTime())) updateData.submissionDate = d;
+      }
+    }
+    
+    if (body.leaderboard !== undefined) updateData.leaderboard = body.leaderboard;
+
+    const updatedEvent = await Event.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedEvent) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    // Update fields if they exist in body
-    if (title !== undefined) event.title = title;
-    if (description !== undefined) event.description = description;
-    if (date !== undefined) event.date = date;
-    if (type !== undefined) event.type = type;
-    if (accent !== undefined) event.accent = accent;
-    if (location !== undefined) event.location = location;
-    if (players !== undefined) event.players = players;
-    if (submissionDate !== undefined) event.submissionDate = submissionDate;
-    if (leaderboard !== undefined) event.leaderboard = leaderboard;
-
-    await event.save();
-
-    return NextResponse.json(event);
-  } catch (error) {
+    return NextResponse.json(updatedEvent);
+  } catch (error: any) {
     console.error("Error updating event:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

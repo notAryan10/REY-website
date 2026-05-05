@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     await dbConnect();
     const body = await req.json();
-    const { title, description, date, type, accent, location, players } = body;
+    const { title, description, date, type, accent, location, players, submissionDate, leaderboard } = body;
 
     if (!title || !description || !date || !type) {
       return NextResponse.json({ error: "Missing required fields: title, description, date, type" }, { status: 400 });
@@ -60,6 +60,8 @@ export async function POST(req: NextRequest) {
       createdBy: session!.user.id,
       location,
       players,
+      submissionDate,
+      leaderboard,
     });
 
     return NextResponse.json(newEvent, { status: 201 });

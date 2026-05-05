@@ -23,11 +23,38 @@ interface EventManagementModalProps {
 export function EventManagementModal({ event, onClose, onUpdate }: EventManagementModalProps) {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  // Helper to format date for datetime-local input (YYYY-MM-DDTHH:mm)
+  const formatForInput = (dateInput: any) => {
+    if (!dateInput) return "";
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return "";
+    
+    // Convert to local time string for the input field
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   const [formData, setFormData] = useState({
-    date: event.date ? new Date(event.date).toISOString().slice(0, 16) : "",
-    submissionDate: event.submissionDate ? new Date(event.submissionDate).toISOString().slice(0, 16) : "",
+    date: formatForInput(event.date),
+    submissionDate: formatForInput(event.submissionDate),
     leaderboard: event.leaderboard || [] as LeaderboardEntry[],
+    players: event.players || "",
   });
+
+  // Sync state if event prop changes (e.g. after update if modal stays open)
+  React.useEffect(() => {
+    setFormData({
+      date: formatForInput(event.date),
+      submissionDate: formatForInput(event.submissionDate),
+      leaderboard: event.leaderboard || [] as LeaderboardEntry[],
+      players: event.players || "",
+    });
+  }, [event]);
 
   const handleAddLeaderboardEntry = () => {
     setFormData({
@@ -55,25 +82,41 @@ export function EventManagementModal({ event, onClose, onUpdate }: EventManageme
     setLoading(true);
     setStatus(null);
 
+    const dataToSend: any = {
+      ...formData,
+      leaderboard: formData.leaderboard,
+      players: formData.players
+    };
+
+    if (formData.date) {
+      dataToSend.date = new Date(formData.date).toISOString();
+    }
+    
+    // Crucial: Send "" if empty so the server knows to set it to null
+    dataToSend.submissionDate = formData.submissionDate ? new Date(formData.submissionDate).toISOString() : "";
+
     try {
       const res = await fetch(`/api/events/${event._id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSend),
       });
 
       if (res.ok) {
         const updated = await res.json();
         setStatus({ type: "success", message: "Event updated successfully! ⚡" });
+        
+        // Wait a bit before closing to show success state
         setTimeout(() => {
           onUpdate(updated);
           onClose();
-        }, 1500);
+        }, 1200);
       } else {
         const error = await res.json();
         setStatus({ type: "error", message: error.error || "Update failed" });
       }
     } catch (err) {
+      console.error("Submission error:", err);
       setStatus({ type: "error", message: "An unexpected error occurred" });
     } finally {
       setLoading(false);
@@ -106,20 +149,37 @@ export function EventManagementModal({ event, onClose, onUpdate }: EventManageme
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase font-pixel text-text-secondary tracking-widest">Event Date</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] uppercase font-pixel text-text-secondary tracking-widest">Event Date</label>
+                  <button 
+                    type="button"
+                    onClick={() => setFormData({ ...formData, date: formatForInput(new Date()) })}
+                    className="text-[8px] uppercase font-pixel text-sky hover:text-white transition-colors"
+                  >
+                    [ Set to Now ]
+                  </button>
+                </div>
                 <input
                   type="datetime-local"
-                  required
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   className="w-full bg-stone/20 border-2 border-border/50 rounded-lg px-4 py-3 text-white focus:border-sky/50 transition-all outline-none"
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase font-pixel text-text-secondary tracking-widest">Submission Deadline</label>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] uppercase font-pixel text-text-secondary tracking-widest">Submission Deadline</label>
+                  <button 
+                    type="button"
+                    onClick={() => setFormData({ ...formData, submissionDate: formatForInput(new Date()) })}
+                    className="text-[8px] uppercase font-pixel text-lava hover:text-white transition-colors"
+                  >
+                    [ Set to Now ]
+                  </button>
+                </div>
                 <input
                   type="datetime-local"
                   value={formData.submissionDate}
@@ -127,6 +187,17 @@ export function EventManagementModal({ event, onClose, onUpdate }: EventManageme
                   className="w-full bg-stone/20 border-2 border-border/50 rounded-lg px-4 py-3 text-white focus:border-sky/50 transition-all outline-none"
                 />
               </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] uppercase font-pixel text-text-secondary tracking-widest">Participant Info</label>
+              <input
+                type="text"
+                placeholder="e.g. 5 Players, Team"
+                value={formData.players}
+                onChange={(e) => setFormData({ ...formData, players: e.target.value })}
+                className="w-full bg-stone/20 border-2 border-border/50 rounded-lg px-4 py-3 text-white focus:border-sky/50 transition-all outline-none"
+              />
             </div>
 
             <div className="space-y-4">
@@ -153,8 +224,8 @@ export function EventManagementModal({ event, onClose, onUpdate }: EventManageme
                       <label className="text-[8px] uppercase font-pixel text-text-secondary">Rank</label>
                       <input
                         type="number"
-                        value={entry.rank}
-                        onChange={(e) => handleLeaderboardChange(index, "rank", parseInt(e.target.value))}
+                        value={isNaN(entry.rank) ? "" : entry.rank}
+                        onChange={(e) => handleLeaderboardChange(index, "rank", e.target.value === "" ? 0 : parseInt(e.target.value))}
                         className="w-full bg-stone/20 border border-border/50 rounded px-2 py-1.5 text-xs text-white"
                       />
                     </div>
@@ -162,6 +233,7 @@ export function EventManagementModal({ event, onClose, onUpdate }: EventManageme
                       <label className="text-[8px] uppercase font-pixel text-text-secondary">Player Name</label>
                       <input
                         type="text"
+                        required
                         placeholder="Player ID"
                         value={entry.playerName}
                         onChange={(e) => handleLeaderboardChange(index, "playerName", e.target.value)}
@@ -172,8 +244,8 @@ export function EventManagementModal({ event, onClose, onUpdate }: EventManageme
                       <label className="text-[8px] uppercase font-pixel text-text-secondary">Score</label>
                       <input
                         type="number"
-                        value={entry.score}
-                        onChange={(e) => handleLeaderboardChange(index, "score", parseInt(e.target.value))}
+                        value={isNaN(entry.score) ? "" : entry.score}
+                        onChange={(e) => handleLeaderboardChange(index, "score", e.target.value === "" ? 0 : parseInt(e.target.value))}
                         className="w-full bg-stone/20 border border-border/50 rounded px-2 py-1.5 text-xs text-white"
                       />
                     </div>

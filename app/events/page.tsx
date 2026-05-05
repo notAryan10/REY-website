@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Calendar, MapPin, Users, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, Users, ArrowRight, Trophy } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { socket } from "@/lib/socket";
 import { Section } from "@/components/layout/Section";
@@ -104,18 +104,26 @@ export default function EventsPage() {
                         </div>
                         {event.submissionDate && (
                           <div className="flex items-center gap-2 text-[10px] uppercase font-pixel tracking-widest text-lava animate-pulse">
-                            <Calendar size={12} /> Ends: {new Date(event.submissionDate).toLocaleDateString()}
+                            <Calendar size={12} /> Ends: {new Date(event.submissionDate).toLocaleString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
                           </div>
                         )}
                       </div>
 
                       {event.leaderboard && event.leaderboard.length > 0 && (
                         <div className="mt-4 p-3 bg-stone/20 border border-border/30 rounded-lg">
-                          <p className="text-[8px] uppercase font-pixel text-text-secondary mb-2 tracking-widest">Top Contenders</p>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-[8px] uppercase font-pixel text-text-secondary tracking-widest">Top Contenders</p>
+                            <Trophy size={10} className="text-sand" />
+                          </div>
                           <div className="space-y-1">
-                            {event.leaderboard.slice(0, 3).map((entry: any, idx: number) => (
+                            {event.leaderboard.slice(0, 3).sort((a: any, b: any) => a.rank - b.rank).map((entry: any, idx: number) => (
                               <div key={idx} className="flex justify-between text-[10px] font-sans">
-                                <span className="text-white">#{entry.rank} {entry.playerName}</span>
+                                <span className="text-white/90">#{entry.rank} {entry.playerName}</span>
                                 <span className="text-sand font-pixel">{entry.score}</span>
                               </div>
                             ))}

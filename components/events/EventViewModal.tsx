@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { X, Calendar, Trophy, MapPin, Users, Link as LinkIcon } from "lucide-react";
+import { X, Calendar, Trophy, MapPin, Users, Link as LinkIcon, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -12,7 +12,29 @@ interface EventViewModalProps {
   onClose: () => void;
 }
 
-export function EventViewModal({ event, onClose }: EventViewModalProps) {
+export function EventViewModal({ event: initialEvent, onClose }: EventViewModalProps) {
+  const [event, setEvent] = React.useState(initialEvent);
+  const [syncing, setSyncing] = React.useState(false);
+
+  React.useEffect(() => {
+    setEvent(initialEvent);
+  }, [initialEvent]);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch(`/api/events/${event._id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setEvent(data);
+      }
+    } catch (err) {
+      console.error("Sync failed:", err);
+    } finally {
+      setTimeout(() => setSyncing(false), 500);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
       <motion.div
@@ -70,15 +92,29 @@ export function EventViewModal({ event, onClose }: EventViewModalProps) {
                 </div>
 
                 {event.submissionDate && (
-                  <Card className="bg-lava/5 border-lava/20 border-dashed">
+                  <Card className={`${new Date(event.submissionDate) < new Date() ? 'bg-stone/10 border-stone/30' : 'bg-lava/5 border-lava/20'} border-dashed`}>
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
-                        <p className="text-[10px] uppercase font-pixel text-lava animate-pulse">Critical Deadline</p>
+                        <div className="flex items-center gap-2">
+                          <p className={`text-[10px] uppercase font-pixel ${new Date(event.submissionDate) < new Date() ? 'text-text-secondary' : 'text-lava animate-pulse'}`}>
+                            {new Date(event.submissionDate) < new Date() ? 'Deadline Passed' : 'Critical Deadline'}
+                          </p>
+                          {new Date(event.submissionDate) < new Date() && (
+                            <Badge variant="secondary" className="h-4 px-1 text-[8px] opacity-50">EXPIRED</Badge>
+                          )}
+                        </div>
                         <p className="text-sm text-white font-sans">
-                          Submissions close on {new Date(event.submissionDate).toLocaleString()}
+                          Submissions {new Date(event.submissionDate) < new Date() ? 'closed' : 'close'} on {new Date(event.submissionDate).toLocaleString(undefined, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
                         </p>
                       </div>
-                      <Calendar className="text-lava" size={24} />
+                      <Calendar className={new Date(event.submissionDate) < new Date() ? 'text-text-secondary' : 'text-lava'} size={24} />
                     </div>
                   </Card>
                 )}
@@ -136,11 +172,11 @@ export function EventViewModal({ event, onClose }: EventViewModalProps) {
               <Button 
                 variant={event.accent || "lava"} 
                 className="uppercase font-pixel text-[10px] tracking-[0.2em] px-8"
-                onClick={() => {
-                   alert("You are already tuned into this event! ⚡");
-                }}
+                onClick={handleSync}
+                disabled={syncing}
               >
-                Sync Status
+                {syncing ? <Loader2 className="animate-spin mr-2" size={12} /> : null}
+                {syncing ? "Syncing..." : "Sync Status"}
               </Button>
             </div>
           </div>
