@@ -9,41 +9,57 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
+import { EventManagementModal } from "@/components/events/EventManagementModal";
+import { EventViewModal } from "@/components/events/EventViewModal";
 
 export default function EventsPage() {
   const { data: session } = useSession();
   const [events, setEvents] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [managingEvent, setManagingEvent] = React.useState<any>(null);
+  const [viewingEvent, setViewingEvent] = React.useState<any>(null);
+
+  const fetchEvents = async () => {
+    try {
+      const res = await fetch("/api/events");
+      if (res.ok) {
+        const data = await res.json();
+        setEvents(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch events:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   React.useEffect(() => {
     if (!socket.connected) {
       socket.connect();
     }
 
-    const fetchEvents = async () => {
-      try {
-        const res = await fetch("/api/events");
-        if (res.ok) {
-          const data = await res.json();
-          setEvents(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch events:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchEvents();
   }, []);
 
   const handleJoinEvent = (event: any) => {
+    const userRole = session?.user?.role;
+
+    if (userRole === "architect") {
+      setManagingEvent(event);
+      return;
+    }
+
     if (session?.user?.id) {
       socket.emit("xp:add", { userId: (session.user as any).id, action: "event_join" });
-      alert(`Joined ${event.title}! +20 XP incoming... ⚡`);
+      setViewingEvent(event);
+      // alert(`Joined ${event.title}! +20 XP incoming... ⚡`); // Alert removed for better UX, modal shows details
     } else {
       alert("Please log in to join events.");
     }
+  };
+
+  const handleEventUpdate = (updatedEvent: any) => {
+    setEvents(events.map(ev => ev._id === updatedEvent._id ? updatedEvent : ev));
   };
 
   return (
@@ -86,7 +102,26 @@ export default function EventsPage() {
                         <div className="flex items-center gap-2 text-[10px] uppercase font-pixel tracking-widest text-text-secondary">
                           <Users size={12} className={`text-${event.accent || "lava"}`} /> {event.players || "Open Entry"}
                         </div>
+                        {event.submissionDate && (
+                          <div className="flex items-center gap-2 text-[10px] uppercase font-pixel tracking-widest text-lava animate-pulse">
+                            <Calendar size={12} /> Ends: {new Date(event.submissionDate).toLocaleDateString()}
+                          </div>
+                        )}
                       </div>
+
+                      {event.leaderboard && event.leaderboard.length > 0 && (
+                        <div className="mt-4 p-3 bg-stone/20 border border-border/30 rounded-lg">
+                          <p className="text-[8px] uppercase font-pixel text-text-secondary mb-2 tracking-widest">Top Contenders</p>
+                          <div className="space-y-1">
+                            {event.leaderboard.slice(0, 3).map((entry: any, idx: number) => (
+                              <div key={idx} className="flex justify-between text-[10px] font-sans">
+                                <span className="text-white">#{entry.rank} {entry.playerName}</span>
+                                <span className="text-sand font-pixel">{entry.score}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="pt-6 flex justify-end">
@@ -110,6 +145,21 @@ export default function EventsPage() {
           </ScrollReveal>
         </Section>
       </main>
+
+      {managingEvent && (
+        <EventManagementModal 
+          event={managingEvent} 
+          onClose={() => setManagingEvent(null)} 
+          onUpdate={handleEventUpdate}
+        />
+      )}
+
+      {viewingEvent && (
+        <EventViewModal 
+          event={viewingEvent} 
+          onClose={() => setViewingEvent(null)} 
+        />
+      )}
     </div>
   );
 }

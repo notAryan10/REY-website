@@ -61,3 +61,46 @@ export async function DELETE(
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const session = await getUserFromSession();
+
+    try {
+      requireRole(session, ["architect"]);
+    } catch (err) {
+      return NextResponse.json({ error: "Forbidden: Architect Clearance Required" }, { status: 403 });
+    }
+
+    await dbConnect();
+    const body = await req.json();
+    const { title, description, date, type, accent, location, players, submissionDate, leaderboard } = body;
+
+    const event = await Event.findById(id);
+    if (!event) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    // Update fields if they exist in body
+    if (title !== undefined) event.title = title;
+    if (description !== undefined) event.description = description;
+    if (date !== undefined) event.date = date;
+    if (type !== undefined) event.type = type;
+    if (accent !== undefined) event.accent = accent;
+    if (location !== undefined) event.location = location;
+    if (players !== undefined) event.players = players;
+    if (submissionDate !== undefined) event.submissionDate = submissionDate;
+    if (leaderboard !== undefined) event.leaderboard = leaderboard;
+
+    await event.save();
+
+    return NextResponse.json(event);
+  } catch (error) {
+    console.error("Error updating event:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}

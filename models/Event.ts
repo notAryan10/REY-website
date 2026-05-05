@@ -35,6 +35,15 @@ const EventSchema = new mongoose.Schema(
     },
     location: String,
     players: String,
+    submissionDate: Date,
+    leaderboard: [
+      {
+        playerName: String,
+        score: Number,
+        rank: Number,
+        projectLink: String,
+      }
+    ],
   },
   { timestamps: true }
 );
