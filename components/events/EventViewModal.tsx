@@ -100,7 +100,7 @@ export function EventViewModal({ event: initialEvent, onClose }: EventViewModalP
                             {new Date(event.submissionDate) < new Date() ? 'Deadline Passed' : 'Critical Deadline'}
                           </p>
                           {new Date(event.submissionDate) < new Date() && (
-                            <Badge variant="secondary" className="h-4 px-1 text-[8px] opacity-50">EXPIRED</Badge>
+                            <Badge variant="stone" className="h-4 px-1 text-[8px] opacity-50">EXPIRED</Badge>
                           )}
                         </div>
                         <p className="text-sm text-white font-sans">
