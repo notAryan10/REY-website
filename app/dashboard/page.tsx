@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 import { AdminCMS } from "@/components/dashboard/AdminCMS";
 import { UserXP } from "@/components/ui/UserXP";
+import { calculateLevel } from "@/lib/xp";
 import { LeaderboardCard } from "@/components/dashboard/LeaderboardCard";
 
 export default function DashboardPage() {
@@ -43,6 +44,7 @@ export default function DashboardPage() {
   const userName = session?.user?.name || "Member";
   const userRole = session?.user?.role || "spectator";
   const xp = profile?.xp || 0;
+  const userStats = calculateLevel(xp);
   const eventWins = profile?.eventWins || 0;
   const projectsLed = profile?.projectsLed || 0;
   const quests = profile?.quests || [];
@@ -73,7 +75,12 @@ export default function DashboardPage() {
                        <h3 className="text-2xl uppercase tracking-tighter text-white">{userName}</h3>
                        <div className="flex flex-col items-center gap-3">
                          <Badge variant="sky" className="px-4 py-1.5">{userRole}</Badge>
-                         <UserXP level={4} xp={750} nextLevelXp={1000} showDetails />
+                         <UserXP 
+                            level={userStats.level} 
+                            xp={userStats.currentLevelXp} 
+                            nextLevelXp={userStats.nextLevelXp} 
+                            showDetails 
+                          />
                        </div>
                     </div>
                     <div className="pt-4 border-t border-border/50 space-y-4">
@@ -100,8 +107,8 @@ export default function DashboardPage() {
                     <div className="space-y-4 relative z-10">
                        <h2 className="text-3xl uppercase leading-tight font-pixel">Welcome Back, <span className="text-grass">{userRole}</span> ⚡</h2>
                        <p className="text-text-secondary text-sm font-sans max-w-xl">
-                          Your reputation is growing. You are currently {500 - (xp % 500)} XP away from reaching 
-                          the next level. Complete today's challenges to level up.
+                          Your reputation is growing. You are currently {userStats.nextLevelXp - userStats.currentLevelXp} XP away from reaching 
+                          the next level (LVL {userStats.level + 1}). Complete today's challenges to level up.
                        </p>
                        <div className="pt-4 flex gap-4">
                           <Button variant="grass" size="sm">Continue Building</Button>

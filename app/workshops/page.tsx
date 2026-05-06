@@ -56,7 +56,7 @@ export default function WorkshopsPage() {
     if (workshops.find(w => w._id === updated._id)) {
       setWorkshops(workshops.map(w => w._id === updated._id ? updated : w));
     } else {
-      fetchWorkshops(); // Refresh list if it's a new workshop
+      fetchWorkshops();
     }
   };
 
@@ -184,7 +184,6 @@ export default function WorkshopsPage() {
                       )}
                     </div>
 
-                    {/* Background Detail */}
                     <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity rotate-12">
                        <BookOpen size={120} />
                     </div>

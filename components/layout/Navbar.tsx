@@ -11,6 +11,7 @@ import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
 import { UserXP } from "../ui/UserXP";
 import { LeaderboardCard } from "../dashboard/LeaderboardCard";
+import { calculateLevel } from "@/lib/xp";
 
 export const Navbar = () => {
   const { data: session, status } = useSession();
@@ -18,6 +19,7 @@ export const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const pathname = usePathname();
+  const userStats = calculateLevel((session?.user as any)?.xp || 0);
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -86,17 +88,24 @@ export const Navbar = () => {
           {status === "authenticated" ? (
             <div className="flex items-center gap-8">
               {/* Profile HUD Section */}
-              <div className="hidden lg:flex items-center gap-4 py-1 px-3 bg-zinc-900/40 border border-border/20 rounded-sm">
-                <div className="flex flex-col gap-1 pr-4 border-r border-border/10">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-white font-pixel uppercase tracking-tighter truncate max-w-[100px]">
+              <div className="hidden lg:flex items-center gap-4 py-1.5 px-4 bg-zinc-900/40 border border-border/20 rounded-sm">
+                <div className="flex flex-col gap-1 pr-4 border-r border-border/10 min-w-0 max-w-[220px]">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-[10px] text-white font-pixel uppercase tracking-tighter truncate">
                       {session.user?.name}
                     </span>
-                    <Badge variant={session.user?.role === 'architect' ? 'lava' : session.user?.role === 'respawner' ? 'sky' : 'stone'} className="!px-1.5 !py-0.5 !text-[7px]">
+                    <Badge 
+                      variant={session.user?.role === 'architect' ? 'lava' : session.user?.role === 'respawner' ? 'sky' : 'stone'} 
+                      className="!px-1.5 !py-0.5 !text-[7px] flex-shrink-0"
+                    >
                       {session.user?.role}
                     </Badge>
                   </div>
-                  <UserXP level={4} xp={750} nextLevelXp={1000} />
+                  <UserXP 
+                    level={userStats.level} 
+                    xp={userStats.currentLevelXp} 
+                    nextLevelXp={userStats.nextLevelXp} 
+                  />
                 </div>
                 
                 <div className="flex items-center gap-2">
@@ -130,7 +139,7 @@ export const Navbar = () => {
               
               {/* Authenticated Tablet/Mobile View Summary */}
               <div className="lg:hidden flex items-center gap-3">
-                <Badge variant="grass" className="font-pixel text-[8px]">LVL 4</Badge>
+                <Badge variant="grass" className="font-pixel text-[8px]">LVL {userStats.level}</Badge>
               </div>
             </div>
           ) : (
@@ -212,7 +221,12 @@ export const Navbar = () => {
                       </div>
                       <div className="flex-1">
                         <p className="font-pixel text-sm text-white mb-1 uppercase tracking-tighter">{session.user?.name}</p>
-                        <UserXP level={4} xp={750} nextLevelXp={1000} showDetails />
+                        <UserXP 
+                          level={userStats.level} 
+                          xp={userStats.currentLevelXp} 
+                          nextLevelXp={userStats.nextLevelXp} 
+                          showDetails 
+                        />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
