@@ -20,16 +20,23 @@ export async function POST(req: NextRequest) {
 
     await dbConnect();
 
+    // Force model registration
+    const _Quest = Quest;
+    const _User = User;
+
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const userQuest = await UserQuest.findById(userQuestId).populate("questId");
+    const userQuest = await UserQuest.findById(userQuestId).populate({
+        path: "questId",
+        model: "Quest"
+    });
+    
     if (!userQuest || userQuest.userId.toString() !== user._id.toString()) {
       return NextResponse.json({ error: "Quest not found" }, { status: 404 });
     }
-// ...
 
     if (userQuest.completed) {
       return NextResponse.json({ message: "Quest already completed" });
@@ -44,11 +51,8 @@ export async function POST(req: NextRequest) {
       userQuest.completedAt = new Date();
 
       // Add XP to user
-      const user = await User.findById(session.user.id);
-      if (user) {
-        user.xp = (user.xp || 0) + quest.xpReward;
-        await user.save();
-      }
+      user.xp = (user.xp || 0) + quest.xpReward;
+      await user.save();
     }
 
     await userQuest.save();
@@ -57,8 +61,11 @@ export async function POST(req: NextRequest) {
       message: userQuest.completed ? "Mission Complete!" : "Progress recorded",
       userQuest 
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to update quest progress:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ 
+        error: "Internal Server Error",
+        details: error.message 
+    }, { status: 500 });
   }
 }

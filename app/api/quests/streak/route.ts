@@ -13,6 +13,9 @@ export async function GET(req: NextRequest) {
 
     await dbConnect();
 
+    // Force model registration
+    const _User = User;
+
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -28,8 +31,7 @@ export async function GET(req: NextRequest) {
         lastLoginDate: new Date(),
       });
     } else {
-// ...
-
+      const lastLogin = new Date(streak.lastLoginDate);
       const today = new Date();
       
       // Normalize dates to midnight for comparison
@@ -57,8 +59,11 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(streak);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to fetch streak data:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ 
+        error: "Internal Server Error", 
+        details: error.message 
+    }, { status: 500 });
   }
 }
