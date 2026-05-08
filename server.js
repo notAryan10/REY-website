@@ -27,13 +27,73 @@ const UserSchema = new mongoose.Schema({
   name: String,
   email: String,
   password: { type: String, select: false },
-  role: String,
+  role: { 
+    type: String, 
+    enum: ["Founder", "Core Architect", "Moderator", "architect", "respawner", "spectator"],
+    default: "spectator" 
+  },
+  status: {
+    type: String,
+    enum: ["active", "suspended", "maintenance"],
+    default: "active",
+  },
   xp: { type: Number, default: 0 },
+  eventWins: { type: Number, default: 0 },
+  projectsLed: { type: Number, default: 0 },
+  achievements: [
+    {
+      achievementId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Achievement",
+      },
+      progress: {
+        type: Number,
+        default: 0,
+      },
+      unlocked: {
+        type: Boolean,
+        default: false,
+      },
+      unlockedAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+  ],
   resetPasswordToken: String,
   resetPasswordExpire: Date,
 });
 
 const User = mongoose.models.User || mongoose.model("User", UserSchema);
+
+// Minimal AuditLog Schema
+const AuditLogSchema = new mongoose.Schema({
+  action: String,
+  subject: String,
+  subjectName: String,
+  actor: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  actorName: String,
+  actorRole: String,
+  status: { type: String, default: "SUCCESS" },
+  details: mongoose.Schema.Types.Mixed,
+}, { timestamps: true });
+
+const AuditLog = mongoose.models.AuditLog || mongoose.model("AuditLog", AuditLogSchema);
+
+// Minimal Achievement Schema
+const AchievementSchema = new mongoose.Schema({
+  title: String,
+  description: String,
+  xpReward: Number,
+  category: String,
+  rarity: String,
+  requirementType: String,
+  requirementValue: Number,
+  hidden: Boolean,
+  icon: String,
+});
+
+const Achievement = mongoose.models.Achievement || mongoose.model("Achievement", AchievementSchema);
 
 app.prepare().then(() => {
   const httpServer = createServer(async (req, res) => {
@@ -84,6 +144,70 @@ app.prepare().then(() => {
         await broadcastLeaderboard();
       } catch (err) {
         console.error("XP Update failed:", err);
+      }
+    });
+
+    socket.on("achievement:unlock", async ({ userId, achievementId }) => {
+      if (!userId || !achievementId) return;
+
+      try {
+        const user = await User.findById(userId);
+        if (!user) return;
+
+        // Check if already unlocked
+        const alreadyUnlocked = user.achievements.some(a => a.achievementId.toString() === achievementId && a.unlocked);
+        if (alreadyUnlocked) return;
+
+        const achievement = await Achievement.findById(achievementId);
+        if (!achievement) return;
+
+        console.log(`🏆 Unlocking Achievement: ${achievement.title} for ${userId}`);
+        
+        const achievementIndex = user.achievements.findIndex(a => a.achievementId.toString() === achievementId);
+        if (achievementIndex > -1) {
+          user.achievements[achievementIndex].unlocked = true;
+          user.achievements[achievementIndex].unlockedAt = new Date();
+          user.achievements[achievementIndex].progress = achievement.requirementValue;
+        } else {
+          user.achievements.push({ 
+            achievementId, 
+            unlocked: true, 
+            unlockedAt: new Date(),
+            progress: achievement.requirementValue 
+          });
+        }
+        
+        user.xp += achievement.xpReward;
+        await user.save();
+
+        // Target emission for the popup
+        socket.emit("achievement:unlocked_success", {
+          title: achievement.title,
+          xpReward: achievement.xpReward,
+          icon: achievement.icon,
+          rarity: achievement.rarity,
+        });
+
+        await broadcastLeaderboard();
+      } catch (err) {
+        console.error("Achievement unlock failed:", err);
+      }
+    });
+
+    socket.on("achievement:progress", async ({ userId, requirementType, amount = 1 }) => {
+      // ... existing code
+    });
+
+    socket.on("admin:action", async (logData) => {
+      try {
+        console.log(`📜 Logging Admin Action: ${logData.action} by ${logData.actorName}`);
+        const log = await AuditLog.create({
+          ...logData,
+          createdAt: new Date()
+        });
+        io.emit("admin:log_update", log);
+      } catch (err) {
+        console.error("Audit Logging failed:", err);
       }
     });
 

@@ -4,6 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { useSession, signOut } from "next-auth/react";
 import { User, Shield, Zap, Trophy, LayoutDashboard, Settings, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { Section } from "@/components/layout/Section";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
@@ -57,7 +58,7 @@ export default function DashboardPage() {
   };
 
   const userName = session?.user?.name || "Member";
-  const userRole = session?.user?.role || "spectator";
+  const userRole = profile?.role || session?.user?.role || "spectator";
   const xp = profile?.xp || 0;
   const userStats = calculateLevel(xp);
   const eventWins = profile?.eventWins || 0;
@@ -102,12 +103,23 @@ export default function DashboardPage() {
                        <Button variant="ghost" size="sm" className="w-full justify-start">
                           <LayoutDashboard size={14} className="mr-3" /> Overview
                        </Button>
-                       <Button variant="ghost" size="sm" className="w-full justify-start text-text-secondary">
-                          <Trophy size={14} className="mr-3" /> Achievements
-                       </Button>
+                       <Link href="/achievements" className="block w-full">
+                         <Button variant="ghost" size="sm" className="w-full justify-start text-text-secondary">
+                            <Trophy size={14} className="mr-3" /> Achievements
+                         </Button>
+                       </Link>
                        <Button variant="ghost" size="sm" className="w-full justify-start text-text-secondary">
                           <Settings size={14} className="mr-3" /> Settings
                        </Button>
+
+                       {["Founder", "Core Architect", "Moderator"].includes(userRole) && (
+                         <Link href="/dashboard/architect" className="block w-full">
+                           <Button variant="ghost" size="sm" className="w-full justify-start text-architect-orange hover:bg-architect-orange/10 border border-architect-orange/20">
+                              <Shield size={14} className="mr-3" /> Architect Console
+                           </Button>
+                         </Link>
+                       )}
+
                        <Button 
                          variant="ghost" 
                          size="sm" 
@@ -188,13 +200,18 @@ export default function DashboardPage() {
                     </div>
                  </ScrollReveal>
 
-                 {userRole === "architect" && (
+                 {["architect", "Founder", "Core Architect", "Moderator"].includes(userRole) && (
                    <ScrollReveal direction="up" delay={0.4}>
                      <div className="pt-8 space-y-6">
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center justify-between gap-4">
                            <div className="h-[2px] flex-grow bg-lava/20" />
-                           <h3 className="text-lg uppercase font-pixel tracking-tighter text-lava">Architect Controls</h3>
+                           <h3 className="text-lg uppercase font-pixel tracking-tighter text-lava whitespace-nowrap">Architect Controls</h3>
                            <div className="h-[2px] flex-grow bg-lava/20" />
+                           <Link href="/dashboard/architect">
+                             <Button variant="lava" size="sm" className="h-8 py-0 px-4 text-[10px]">
+                                Open Command Terminal
+                             </Button>
+                           </Link>
                         </div>
                         <AdminCMS />
                      </div>

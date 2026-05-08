@@ -20,8 +20,13 @@ const UserSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["architect", "respawner", "spectator"],
+      enum: ["Founder", "Core Architect", "Moderator", "architect", "respawner", "spectator"],
       default: "spectator",
+    },
+    status: {
+      type: String,
+      enum: ["active", "suspended", "maintenance"],
+      default: "active",
     },
     image: {
       type: String,
@@ -39,6 +44,26 @@ const UserSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    achievements: [
+      {
+        achievementId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Achievement",
+        },
+        progress: {
+          type: Number,
+          default: 0,
+        },
+        unlocked: {
+          type: Boolean,
+          default: false,
+        },
+        unlockedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     resetPasswordToken: String,
     resetPasswordExpire: Date,
     quests: [

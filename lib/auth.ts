@@ -9,15 +9,27 @@ import User from "@/models/User";
 import { getServerSession } from "next-auth";
 import { cookies } from "next/headers";
 
+import AdminPermission from "@/models/AdminPermission";
+
+const FOUNDER_EMAIL = "aryanverma1857@gmail.com";
+
 export function requireRole(session: any, allowedRoles: string[]) {
   if (!session || !session.user || !allowedRoles.includes(session.user.role)) {
     throw new Error("Unauthorized: Insufficient clearance level.");
   }
 }
 
+export function hasPermission(session: any, permission: string) {
+  if (!session || !session.user) return false;
+  if (session.user.role === "Founder") return true;
+  return session.user.permissions?.includes(permission) || session.user.permissions?.includes("FULL_ACCESS");
+}
+
 export async function getUserFromSession() {
   return await getServerSession(authOptions);
 }
+
+const ALLOWED_ROLES = ["Founder", "Core Architect", "Moderator", "architect", "respawner", "spectator"];
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -65,11 +77,17 @@ export const authOptions: NextAuthOptions = {
         // Handle role elevation for credentials login
         const cookieStore = await cookies();
         const pendingRole = cookieStore.get("pending_role")?.value;
-        if (pendingRole && (pendingRole === "architect" || pendingRole === "respawner" || pendingRole === "spectator")) {
+        if (pendingRole && ALLOWED_ROLES.includes(pendingRole)) {
           if (user.role !== pendingRole) {
             user.role = pendingRole;
             await user.save();
           }
+        }
+
+        // Auto-assign Founder role if email matches
+        if (user.email === FOUNDER_EMAIL && user.role !== "Founder") {
+          user.role = "Founder";
+          await user.save();
         }
 
         return {
@@ -92,9 +110,9 @@ export const authOptions: NextAuthOptions = {
       const existingUser = await User.findOne({ email: user.email });
       const cookieStore = await cookies();
       const pendingRole = cookieStore.get("pending_role")?.value;
-      const role = (pendingRole === "architect" || pendingRole === "respawner" || pendingRole === "spectator") 
+      const role = (pendingRole && ALLOWED_ROLES.includes(pendingRole)) 
         ? pendingRole 
-        : null;
+        : (user.email === FOUNDER_EMAIL ? "Founder" : null);
 
       if (!existingUser) {
         await User.create({
@@ -103,10 +121,17 @@ export const authOptions: NextAuthOptions = {
           image: user.image,
           role: role || "spectator",
         });
-      } else if (role && existingUser.role !== role) {
-        // Elevate/Change role if a valid pending_role exists and is different
-        existingUser.role = role;
-        await existingUser.save();
+      } else {
+        let needsSave = false;
+        if (role && existingUser.role !== role) {
+          existingUser.role = role;
+          needsSave = true;
+        }
+        if (existingUser.email === FOUNDER_EMAIL && existingUser.role !== "Founder") {
+          existingUser.role = "Founder";
+          needsSave = true;
+        }
+        if (needsSave) await existingUser.save();
       }
 
       // Clean up the cookie
@@ -123,16 +148,21 @@ export const authOptions: NextAuthOptions = {
         token.xp = (user as any).xp;
       }
 
-      // If it's an OAuth sign in, we need to fetch the user from DB to get their role/xp
-      if (account && account.provider !== "credentials") {
-        await dbConnect();
-        const dbUser = await User.findOne({ email: token.email });
-        if (dbUser) {
-          token.role = dbUser.role;
-          token.id = dbUser._id.toString();
-          token.xp = dbUser.xp;
+      // If it's an OAuth sign in or session update, fetch from DB
+      await dbConnect();
+      const dbUser = await User.findOne({ email: token.email });
+      if (dbUser) {
+        token.role = dbUser.role;
+        token.id = dbUser._id.toString();
+        token.xp = dbUser.xp;
+
+        // Fetch permissions if they are an admin
+        if (["Founder", "Core Architect", "Moderator"].includes(dbUser.role)) {
+          const adminPerms = await AdminPermission.findOne({ userId: dbUser._id });
+          token.permissions = adminPerms ? adminPerms.permissions : [];
         }
       }
+      
       return token;
     },
     async session({ session, token }: { session: any; token: any }) {
@@ -140,6 +170,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role;
         session.user.id = token.id;
         session.user.xp = token.xp;
+        session.user.permissions = token.permissions || [];
       }
       return session;
     },

@@ -8,7 +8,12 @@ export default withAuth(
     const pathname = req.nextUrl.pathname;
 
     // Allow spectators to see the main dashboard, but keep them away from specific pages
-    if (pathname.startsWith("/admin") && token?.role !== "architect") {
+    const adminRoles = ["Founder", "Core Architect", "Moderator"];
+    if (pathname.startsWith("/dashboard/architect") && !adminRoles.includes(token?.role as string)) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+    
+    if (pathname.startsWith("/admin") && token?.role !== "architect" && !adminRoles.includes(token?.role as string)) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
   },

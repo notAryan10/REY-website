@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { AchievementPopup } from "@/components/ui/AchievementPopup";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -33,6 +34,7 @@ export default function RootLayout({
           <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[100] bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]" />
           
           <Navbar />
+          <AchievementPopup />
           
           {children}
         </SessionProvider>

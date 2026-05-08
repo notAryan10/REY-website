@@ -1,6 +1,13 @@
 @import "tailwindcss";
 
 @theme {
+  --color-architect-bg: #050505;
+  --color-architect-surface: #111111;
+  --color-architect-green: #52d053;
+  --color-architect-orange: #ff6b2c;
+  --color-architect-blue: #57c7ff;
+  --color-architect-gold: #f6c453;
+  
   --color-grass: #4CAF50;
   --color-lava: #FF6B35;
   --color-sky: #5BC0EB;

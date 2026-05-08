@@ -262,7 +262,7 @@ export function AdminCMS() {
                           className={`w-8 h-8 rounded-full border-2 transition-all ${
                             eventForm.accent === color ? "border-white scale-110 shadow-lg" : "border-transparent opacity-50 hover:opacity-100"
                           }`}
-                          style={{ backgroundColor: `var(--${color})` }}
+                          style={{ backgroundColor: `var(--color-${color})` }}
                         />
                       ))}
                     </div>
@@ -379,6 +379,23 @@ export function AdminCMS() {
                         <option value="public">Public (All Visitors)</option>
                         <option value="members">Classified (Members Only)</option>
                       </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase font-pixel text-text-secondary tracking-widest">Visual Accent</label>
+                    <div className="flex gap-3">
+                      {["sky", "lava", "grass", "sand"].map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => setResourceForm({ ...resourceForm, accent: color })}
+                          className={`w-8 h-8 rounded-full border-2 transition-all ${
+                            resourceForm.accent === color ? "border-white scale-110 shadow-lg" : "border-transparent opacity-50 hover:opacity-100"
+                          }`}
+                          style={{ backgroundColor: `var(--color-${color})` }}
+                        />
+                      ))}
                     </div>
                   </div>
 

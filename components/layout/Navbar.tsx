@@ -15,16 +15,39 @@ import { calculateLevel } from "@/lib/xp";
 
 export const Navbar = () => {
   const { data: session, status } = useSession();
+  const [profile, setProfile] = useState<any>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const pathname = usePathname();
-  const userStats = calculateLevel((session?.user as any)?.xp || 0);
+
+  // Prioritize live data from database
+  const userRole = profile?.role || session?.user?.role || "spectator";
+  const userXp = profile?.xp ?? (session?.user as any)?.xp ?? 0;
+  const userStats = calculateLevel(userXp);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (status === "authenticated") {
+        try {
+          const res = await fetch("/api/user/profile");
+          if (res.ok) {
+            const data = await res.json();
+            setProfile(data);
+          }
+        } catch (err) {
+          console.error("Failed to fetch profile in Navbar:", err);
+        }
+      }
+    };
+    fetchProfile();
+  }, [status]);
 
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Events", href: "/events" },
     { name: "Game Jams", href: "/gamejams" },
+    { name: "Achievements", href: "/achievements" },
     { name: "Projects", href: "/projects" },
     { name: "Workshops", href: "/workshops" },
     { name: "Resources", href: "/resources" },
@@ -38,6 +61,8 @@ export const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  if (pathname === "/dashboard/architect") return null;
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out ${
@@ -46,59 +71,61 @@ export const Navbar = () => {
           : "bg-transparent py-8"
       }`}
     >
-      <Container className="flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <motion.div
-            whileHover={{ rotate: 15, scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="w-10 h-10 bg-grass flex items-center justify-center pixel-border shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)] transition-transform"
-          >
-            <Rocket className="w-6 h-6 text-white" />
-          </motion.div>
-          <span className="font-pixel text-xl tracking-tighter text-white group-hover:text-grass transition-colors">
-            R.E.Y
-          </span>
-        </Link>
+      <Container maxWidth="max-w-[1440px]" className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-8 min-w-0">
+          <Link href="/" className="flex items-center gap-2 group shrink-0">
+            <motion.div
+              whileHover={{ rotate: 15, scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="w-9 h-9 bg-grass flex items-center justify-center pixel-border shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)] transition-transform"
+            >
+              <Rocket className="w-5 h-5 text-white" />
+            </motion.div>
+            <span className="font-pixel text-lg tracking-tighter text-white group-hover:text-grass transition-colors">
+              R.E.Y
+            </span>
+          </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-6 lg:gap-8">
-          {navLinks.map((link) => {
-            const isActive = pathname === link.href;
-            return (
-              <Link
-                key={link.name}
-                href={link.href}
-                className={`font-pixel text-[9px] lg:text-[10px] uppercase transition-all duration-200 relative group/link ${
-                  isActive ? "text-grass" : "text-text-secondary hover:text-white"
-                }`}
-              >
-                {link.name}
-                {isActive && (
-                  <motion.div 
-                    layoutId="navbar-active"
-                    className="absolute -bottom-1 left-0 right-0 h-[2px] bg-grass"
-                  />
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+          {/* Desktop Nav */}
+          <nav className="hidden lg:flex items-center gap-4 xl:gap-6">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className={`font-pixel text-[8px] xl:text-[9px] uppercase transition-all duration-200 relative group/link whitespace-nowrap ${
+                    isActive ? "text-grass" : "text-text-secondary hover:text-white"
+                  }`}
+                >
+                  {link.name}
+                  {isActive && (
+                    <motion.div 
+                      layoutId="navbar-active"
+                      className="absolute -bottom-1 left-0 right-0 h-[2px] bg-grass"
+                    />
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 shrink-0">
           {status === "authenticated" ? (
-            <div className="flex items-center gap-8">
+            <div className="flex items-center gap-3">
               {/* Profile HUD Section */}
-              <div className="hidden lg:flex items-center gap-4 py-1.5 px-4 bg-zinc-900/40 border border-border/20 rounded-sm">
-                <div className="flex flex-col gap-1 pr-4 border-r border-border/10 min-w-0 max-w-[220px]">
+              <div className="hidden lg:flex items-center gap-3 py-1 px-3 bg-zinc-900/40 border border-border/20 rounded-sm">
+                <div className="flex flex-col gap-1 pr-3 border-r border-border/10 min-w-0 max-w-[150px] xl:max-w-[180px]">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="text-[10px] text-white font-pixel uppercase tracking-tighter truncate">
                       {session.user?.name}
                     </span>
                     <Badge 
-                      variant={session.user?.role === 'architect' ? 'lava' : session.user?.role === 'respawner' ? 'sky' : 'stone'} 
+                      variant={userRole === 'architect' ? 'lava' : userRole === 'respawner' ? 'sky' : 'stone'} 
                       className="!px-1.5 !py-0.5 !text-[7px] flex-shrink-0"
                     >
-                      {session.user?.role}
+                      {userRole}
                     </Badge>
                   </div>
                   <UserXP 
