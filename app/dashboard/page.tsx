@@ -146,10 +146,13 @@ export default function DashboardPage() {
                           the next level (LVL {userStats.level + 1}). Complete today's challenges to level up.
                        </p>
                        <div className="pt-4 flex gap-4">
-                          <Button variant="grass" size="sm">Continue Building</Button>
-                          <Button variant="secondary" size="sm">Daily Tasks</Button>
-                       </div>
-                    </div>
+                          <Link href="/projects">
+                            <Button variant="grass" size="sm">Continue Building</Button>
+                          </Link>
+                          <Link href="/operations">
+                            <Button variant="secondary" size="sm">Daily Tasks</Button>
+                          </Link>
+                       </div>                    </div>
                     <div className="absolute top-0 right-0 w-32 h-32 bg-grass/10 blur-3xl animate-pulse" />
                  </Card>
 

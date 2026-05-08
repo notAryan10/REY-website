@@ -211,6 +211,20 @@ app.prepare().then(() => {
       }
     });
 
+    socket.on("operation:complete", async (data) => {
+      try {
+        console.log(`🎯 Quest Completed: ${data.target} by ${data.user}`);
+        // Broadcast to all connected clients for the activity feed
+        io.emit("operation:log_update", {
+          ...data,
+          id: Math.random().toString(36).substr(2, 9),
+          timestamp: new Date()
+        });
+      } catch (err) {
+        console.error("Operation broadcast failed:", err);
+      }
+    });
+
     socket.on("disconnect", () => {
       console.log("👋 User disconnected:", socket.id);
     });

@@ -244,37 +244,40 @@ export default function ArchitectConsole() {
                   <OverviewSection users={users} achievements={achievements} />
                 )}
                 {activeSection === "Members" && (
-                  <MembersSection 
-                    users={users} 
-                    searchTerm={searchTerm} 
-                    setSearchTerm={setSearchTerm} 
+                  <MembersSection
+                    users={users}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
                     fetchData={fetchData}
                     showStatus={showStatus}
+                    session={session}
                   />
                 )}
                 {activeSection === "XP Control" && (
-                  <XPControlSection 
-                    users={users} 
-                    fetchData={fetchData}
-                    showStatus={showStatus}
-                  />
-                )}
-                {activeSection === "Achievements" && (
-                  <AchievementsSection 
-                    users={users} 
-                    achievements={achievements}
-                    fetchData={fetchData}
-                    showStatus={showStatus}
-                  />
-                )}
-                {activeSection === "Admin Management" && session.user.role === "Founder" && (
-                  <AdminManagementSection 
+                  <XPControlSection
                     users={users}
                     fetchData={fetchData}
                     showStatus={showStatus}
+                    session={session}
                   />
                 )}
-                {activeSection === "System Logs" && (
+                {activeSection === "Achievements" && (
+                  <AchievementsSection
+                    users={users}
+                    achievements={achievements}
+                    fetchData={fetchData}
+                    showStatus={showStatus}
+                    session={session}
+                  />
+                )}
+                {activeSection === "Admin Management" && session?.user?.role === "Founder" && (
+                  <AdminManagementSection
+                    users={users}
+                    fetchData={fetchData}
+                    showStatus={showStatus}
+                    session={session}
+                  />
+                )}                {activeSection === "System Logs" && (
                   <SystemLogsSection />
                 )}
               </motion.div>

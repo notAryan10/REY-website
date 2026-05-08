@@ -1,0 +1,58 @@
+import { NextRequest, NextResponse } from "next/server";
+import dbConnect from "@/lib/mongodb";
+import UserQuest from "@/models/UserQuest";
+import User from "@/models/User";
+import Quest from "@/models/Quest";
+import { getUserFromSession } from "@/lib/auth";
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getUserFromSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { userQuestId, increment = 1 } = await req.json();
+
+    if (!userQuestId) {
+      return NextResponse.json({ error: "Missing userQuestId" }, { status: 400 });
+    }
+
+    await dbConnect();
+
+    const userQuest = await UserQuest.findById(userQuestId).populate("questId");
+    if (!userQuest || userQuest.userId.toString() !== session.user.id) {
+      return NextResponse.json({ error: "Quest not found" }, { status: 404 });
+    }
+
+    if (userQuest.completed) {
+      return NextResponse.json({ message: "Quest already completed" });
+    }
+
+    const quest = userQuest.questId as any;
+    userQuest.progress += increment;
+
+    if (userQuest.progress >= quest.requirement) {
+      userQuest.progress = quest.requirement;
+      userQuest.completed = true;
+      userQuest.completedAt = new Date();
+
+      // Add XP to user
+      const user = await User.findById(session.user.id);
+      if (user) {
+        user.xp = (user.xp || 0) + quest.xpReward;
+        await user.save();
+      }
+    }
+
+    await userQuest.save();
+
+    return NextResponse.json({ 
+      message: userQuest.completed ? "Mission Complete!" : "Progress recorded",
+      userQuest 
+    });
+  } catch (error) {
+    console.error("Failed to update quest progress:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
