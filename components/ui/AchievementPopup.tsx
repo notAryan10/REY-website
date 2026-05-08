@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { socket } from "@/lib/socket";
 import { Trophy, Zap, Star } from "lucide-react";
 import * as LucideIcons from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
 
 // Map rarity to project theme colors
 const RARITY_MAP: Record<string, "grass" | "lava" | "sky" | "sand" | "stone"> = {
