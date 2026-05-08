@@ -203,7 +203,7 @@ export default function AchievementsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               {loading ? (
                 [...Array(6)].map((_, i) => (
-                  <Card key={i} className="h-48 animate-pulse bg-stone/10 border-border/20" />
+                  <Card key={i} className="h-48 animate-pulse bg-stone/10 border-border/20"><div /></Card>
                 ))
               ) : (
                 <AnimatePresence mode="popLayout">

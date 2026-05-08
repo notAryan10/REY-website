@@ -107,7 +107,7 @@ export default function ArchitectConsole() {
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-50 bg-[length:100%_2px,3px_100%] pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000_100%)] opacity-50" />
-        <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+        <div className="absolute inset-0 opacity-[0.02] bg-[radial-gradient(#fff_1px,transparent_1px)] bg-[size:10px_10px]" />
         <div className="absolute top-0 left-0 w-full h-1 bg-architect-orange/20 animate-pulse" />
       </div>
 
@@ -501,6 +501,9 @@ function MembersSection({ users, searchTerm, setSearchTerm, fetchData, showStatu
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: "DELETE"
       });
+      
+      const data = await res.json();
+
       if (res.ok) {
         showStatus("success", "User identity purged successfully");
 
@@ -517,11 +520,11 @@ function MembersSection({ users, searchTerm, setSearchTerm, fetchData, showStatu
 
         fetchData();
       } else {
-        const err = await res.json();
-        showStatus("error", err.error || "Failed to purge user identity");
+        showStatus("error", data.error || `Purge failed with status: ${res.status}`);
       }
-    } catch (err) {
-      showStatus("error", "Network error during purge operation");
+    } catch (err: any) {
+      console.error("Purge Protocol Error:", err);
+      showStatus("error", `Protocol Breach: ${err.message || "Network Error"}`);
     }
   };
 
@@ -786,10 +789,10 @@ function XPControlSection({ users, fetchData, showStatus, session }: any) {
   );
 }
 
-function AchievementsSection({ users, achievements, fetchData, showStatus }: any) {
+function AchievementsSection({ users, achievements, fetchData, showStatus, session }: any) {
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
-  const handleUnlock = async (achievementId: string) => {
+  const handleUnlock = async (achievementId: string, achievementTitle: string) => {
     if (!selectedUser) return;
     
     try {
@@ -801,6 +804,19 @@ function AchievementsSection({ users, achievements, fetchData, showStatus }: any
       
       if (res.ok) {
         showStatus("success", "Achievement unlocked successfully");
+
+        // Emit live log
+        socket.emit("admin:action", {
+          action: "ACHIEVEMENT_UNLOCKED",
+          subject: selectedUser._id,
+          subjectName: selectedUser.name,
+          actor: session.user.id,
+          actorName: session.user.name,
+          actorRole: session.user.role,
+          status: "SUCCESS",
+          details: { achievement: achievementTitle }
+        });
+
         fetchData();
         // Update local user state
         const updatedUser = { ...selectedUser };
@@ -894,7 +910,7 @@ function AchievementsSection({ users, achievements, fetchData, showStatus }: any
                     </div>
                     
                     {!isUnlocked ? (
-                      <Button variant="stone" size="sm" className="text-[9px] h-8 px-3" onClick={() => handleUnlock(ach._id)}>
+                      <Button variant="stone" size="sm" className="text-[9px] h-8 px-3" onClick={() => handleUnlock(ach._id, ach.title)}>
                         Unlock
                       </Button>
                     ) : (
@@ -919,7 +935,7 @@ function AchievementsSection({ users, achievements, fetchData, showStatus }: any
   );
 }
 
-function AdminManagementSection({ users, fetchData, showStatus }: any) {
+function AdminManagementSection({ users, fetchData, showStatus, session }: any) {
   const [targetEmail, setTargetEmail] = useState("");
   const [selectedTier, setSelectedTier] = useState<"Core Architect" | "Moderator">("Moderator");
   const [submitting, setSubmitting] = useState(false);
@@ -942,6 +958,20 @@ function AdminManagementSection({ users, fetchData, showStatus }: any) {
       
       if (res.ok) {
         showStatus("success", `Admin privileges granted to ${targetEmail}`);
+        
+        const data = await res.json();
+        // Emit live log
+        socket.emit("admin:action", {
+          action: "AUTH_UPGRADE",
+          subject: data.user?._id || targetEmail,
+          subjectName: targetEmail,
+          actor: session.user.id,
+          actorName: session.user.name,
+          actorRole: session.user.role,
+          status: "SUCCESS",
+          details: { tier: selectedTier }
+        });
+
         setTargetEmail("");
         fetchData();
       } else {
@@ -1037,15 +1067,34 @@ function AdminManagementSection({ users, fetchData, showStatus }: any) {
 }
 
 function SystemLogsSection() {
-  const logs = [
-    { time: "14:20:05", action: "XP_INJECTION", subject: "user_823", actor: "Core_Architect", status: "SUCCESS" },
-    { time: "14:18:22", action: "AUTH_UPGRADE", subject: "user_119", actor: "Founder", status: "SUCCESS" },
-    { time: "14:15:10", action: "SYSTEM_SCAN", subject: "db_cluster_0", actor: "SYSTEM", status: "OPTIMIZED" },
-    { time: "14:12:45", action: "LOG_PURGE", subject: "audit_trail", actor: "Founder", status: "SECURE" },
-    { time: "14:05:33", action: "ACHIEVEMENT_UNLOCK", subject: "user_442", actor: "Core_Architect", status: "SUCCESS" },
-    { time: "13:58:12", action: "MEMBER_SUSPENSION", subject: "user_901", actor: "Moderator", status: "RESOLVED" },
-    { time: "13:45:00", action: "CYCLE_ROTATION", subject: "global_xp", actor: "SYSTEM", status: "COMPLETED" },
-  ];
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLogs();
+
+    // Listen for live updates
+    socket.on("admin:log_update", (newLog: any) => {
+      setLogs(prev => [newLog, ...prev].slice(0, 50));
+    });
+
+    return () => {
+      socket.off("admin:log_update");
+    };
+  }, []);
+
+  const fetchLogs = async () => {
+    try {
+      const res = await fetch("/api/admin/logs");
+      if (res.ok) {
+        setLogs(await res.json());
+      }
+    } catch (err) {
+      console.error("Failed to fetch logs", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Card className="bg-black/40 font-mono" hoverEffect={false}>
@@ -1061,33 +1110,45 @@ function SystemLogsSection() {
         <div className="grid grid-cols-5 gap-4 py-2 border-b border-white/10 text-[10px] font-pixel text-text-secondary">
           <span>TIMESTAMP</span>
           <span>ACTION_TYPE</span>
-          <span>SUBJECT_ID</span>
+          <span>SUBJECT</span>
           <span>ACTOR</span>
           <span className="text-right">RESULT</span>
         </div>
-        <div className="space-y-0.5 pt-2">
-          {logs.map((log, i) => (
-            <motion.div 
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.1 }}
-              key={i} 
-              className="grid grid-cols-5 gap-4 py-3 hover:bg-white/5 transition-colors border-b border-white/5 items-center group"
-            >
-              <span className="text-[10px] text-architect-blue font-pixel">{log.time}</span>
-              <span className="text-[10px] text-white font-pixel truncate">{log.action}</span>
-              <span className="text-[10px] text-text-secondary font-mono">{log.subject}</span>
-              <span className="text-[10px] text-architect-orange font-pixel">{log.actor}</span>
-              <span className={`text-[10px] font-pixel text-right ${log.status === 'SUCCESS' || log.status === 'OPTIMIZED' ? 'text-architect-green' : 'text-lava'}`}>
-                {log.status}
-              </span>
-            </motion.div>
-          ))}
-          <div className="py-4 flex items-center gap-2 text-[10px] font-pixel text-architect-green/50 animate-pulse">
-            <span className="w-1 h-3 bg-current" />
-            AWAITING NEXT EVENT_PACKET...
+        
+        {loading ? (
+          <div className="py-8 text-center text-text-secondary font-pixel text-[10px] animate-pulse">
+            SYNCING AUDIT TRAIL...
           </div>
-        </div>
+        ) : (
+          <div className="space-y-0.5 pt-2">
+            <AnimatePresence initial={false}>
+              {logs.map((log, i) => (
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  key={log._id || i} 
+                  className="grid grid-cols-5 gap-4 py-3 hover:bg-white/5 transition-colors border-b border-white/5 items-center group"
+                >
+                  <span className="text-[10px] text-architect-blue font-pixel">
+                    {new Date(log.createdAt).toLocaleTimeString()}
+                  </span>
+                  <span className="text-[10px] text-white font-pixel truncate">{log.action}</span>
+                  <span className="text-[10px] text-text-secondary font-mono truncate">
+                    {log.subjectName || log.subject}
+                  </span>
+                  <span className="text-[10px] text-architect-orange font-pixel truncate">{log.actorName}</span>
+                  <span className={`text-[10px] font-pixel text-right ${log.status === 'SUCCESS' || log.status === 'PURGED' ? 'text-architect-green' : 'text-lava'}`}>
+                    {log.status}
+                  </span>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            <div className="py-4 flex items-center gap-2 text-[10px] font-pixel text-architect-green/50 animate-pulse">
+              <span className="w-1 h-3 bg-current" />
+              AWAITING NEXT EVENT_PACKET...
+            </div>
+          </div>
+        )}
       </div>
     </Card>
   );
