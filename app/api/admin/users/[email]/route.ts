@@ -10,6 +10,10 @@ export async function DELETE(
   try {
     const session = await getUserFromSession();
 
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     try {
       requireRole(session, ["architect"]);
     } catch (err) {
