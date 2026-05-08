@@ -8,7 +8,7 @@ import { getUserFromSession } from "@/lib/auth";
 export async function POST(req: NextRequest) {
   try {
     const session = await getUserFromSession();
-    if (!session) {
+    if (!session || !session.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -20,10 +20,16 @@ export async function POST(req: NextRequest) {
 
     await dbConnect();
 
+    const user = await User.findOne({ email: session.user.email });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     const userQuest = await UserQuest.findById(userQuestId).populate("questId");
-    if (!userQuest || userQuest.userId.toString() !== session.user.id) {
+    if (!userQuest || userQuest.userId.toString() !== user._id.toString()) {
       return NextResponse.json({ error: "Quest not found" }, { status: 404 });
     }
+// ...
 
     if (userQuest.completed) {
       return NextResponse.json({ message: "Quest already completed" });
