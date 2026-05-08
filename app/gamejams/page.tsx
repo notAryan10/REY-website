@@ -101,18 +101,16 @@ export default function GameJamsPage() {
                       )}
                     </div>
                     
-                    <div className="pt-8 w-full relative z-10">
                       <Button 
-                        variant={new Date(jam.submissionDate) < new Date() ? "secondary" : "grass"}
+                        variant={(jam.submissionDate && new Date(jam.submissionDate) < new Date()) ? "secondary" : "grass"}
                         size="sm" 
                         className="w-full uppercase font-pixel text-[10px] tracking-widest"
                         onClick={() => handleAction(jam)}
-                        disabled={new Date(jam.submissionDate) < new Date() && session?.user?.role !== "architect"}
+                        disabled={!!(jam.submissionDate && new Date(jam.submissionDate) < new Date()) && session?.user?.role !== "architect"}
                       >
-                        {session?.user?.role === "architect" ? "Manage Jam" : (new Date(jam.submissionDate) < new Date() ? "Submissions Closed" : "Submit Project")}
+                        {session?.user?.role === "architect" ? "Manage Jam" : ((jam.submissionDate && new Date(jam.submissionDate) < new Date()) ? "Submissions Closed" : "Submit Project")}
                         <ArrowRight size={14} className="ml-2" />
                       </Button>
-                    </div>
 
                     <div className="absolute -bottom-6 -right-6 opacity-10 group-hover:opacity-20 transition-opacity rotate-12">
                        <Gamepad2 size={120} className="text-grass" />

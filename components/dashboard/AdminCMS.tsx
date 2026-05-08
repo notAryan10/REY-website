@@ -69,7 +69,7 @@ export function AdminCMS() {
         setEvents(data);
       }
     } catch {
-      console.error("Failed to fetch events", err);
+      console.error("Failed to fetch events");
     }
   };
 
@@ -82,7 +82,7 @@ export function AdminCMS() {
         setResources(data);
       }
     } catch {
-      console.error("Failed to fetch resources", err);
+      console.error("Failed to fetch resources");
     } finally {
       setResourceLoading(false);
     }

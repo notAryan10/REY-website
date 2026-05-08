@@ -63,6 +63,7 @@ export default function WorkshopsPage() {
 
   const createNewWorkshop = () => {
     setManagingWorkshop({
+      _id: "", // Temporary ID
       title: "New Workshop",
       description: "",
       type: "workshop",
@@ -70,8 +71,9 @@ export default function WorkshopsPage() {
       accent: "sky",
       location: "Virtual HQ",
       players: "Unlimited",
-      isPublic: false
-    });
+      isPublic: false,
+      createdBy: session?.user?.id || ""
+    } as IEvent);
   };
 
   return (

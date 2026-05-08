@@ -24,7 +24,7 @@ export const Navbar = () => {
 
   // Prioritize live data from database
   const userRole = profile?.role || session?.user?.role || "spectator";
-  const userXp = profile?.xp ?? (session?.user as AppUser)?.xp ?? 0;
+  const userXp = profile?.xp ?? (session?.user as unknown as AppUser)?.xp ?? 0;
   const userStats = calculateLevel(userXp);
 
   const fetchProfile = useCallback(async () => {
