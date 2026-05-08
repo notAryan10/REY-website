@@ -1,28 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Streak from "@/models/Streak";
+import User from "@/models/User";
 import { getUserFromSession } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   try {
     const session = await getUserFromSession();
-    if (!session) {
+    if (!session || !session.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await dbConnect();
 
-    let streak = await Streak.findOne({ userId: session.user.id });
+    const user = await User.findOne({ email: session.user.email });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    let streak = await Streak.findOne({ userId: user._id });
 
     if (!streak) {
       streak = await Streak.create({
-        userId: session.user.id,
+        userId: user._id,
         currentStreak: 1,
         highestStreak: 1,
         lastLoginDate: new Date(),
       });
     } else {
-      const lastLogin = new Date(streak.lastLoginDate);
+// ...
+
       const today = new Date();
       
       // Normalize dates to midnight for comparison
