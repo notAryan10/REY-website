@@ -1,5 +1,8 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
+import DiscordProvider from "next-auth/providers/discord";
+import GitHubProvider from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
@@ -17,6 +20,18 @@ export async function getUserFromSession() {
 
 export const authOptions: NextAuthOptions = {
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    }),
+    DiscordProvider({
+      clientId: process.env.DISCORD_CLIENT_ID || "",
+      clientSecret: process.env.DISCORD_CLIENT_SECRET || "",
+    }),
+    GitHubProvider({
+      clientId: process.env.GITHUB_CLIENT_ID || "",
+      clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
+    }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -36,6 +51,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid email or password");
         }
 
+        if (!user.password) {
+          throw new Error("This account was created with a social provider. Please sign in with Google, Discord, or GitHub.");
+        }
+
         const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
 
         if (!isPasswordCorrect) {
@@ -53,11 +72,41 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }: { token: any; user?: any }) {
+    async signIn({ user, account }) {
+      if (account?.provider === "credentials") {
+        return true;
+      }
+
+      await dbConnect();
+      const existingUser = await User.findOne({ email: user.email });
+
+      if (!existingUser) {
+        await User.create({
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          role: "spectator",
+        });
+      }
+
+      return true;
+    },
+    async jwt({ token, user, account }) {
       if (user) {
-        token.role = user.role;
+        token.role = (user as any).role;
         token.id = user.id;
-        token.xp = user.xp;
+        token.xp = (user as any).xp;
+      }
+
+      // If it's an OAuth sign in, we need to fetch the user from DB to get their role/xp
+      if (account && account.provider !== "credentials") {
+        await dbConnect();
+        const dbUser = await User.findOne({ email: token.email });
+        if (dbUser) {
+          token.role = dbUser.role;
+          token.id = dbUser._id.toString();
+          token.xp = dbUser.xp;
+        }
       }
       return token;
     },

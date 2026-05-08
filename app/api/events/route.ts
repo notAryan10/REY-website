@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       type,
       accent: accent || "sky",
       isPublic,
-      createdBy: session!.user.id,
+      createdBy: session?.user?.id,
       location,
       players,
       submissionDate,

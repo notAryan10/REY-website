@@ -18,8 +18,12 @@ export async function DELETE(
 
     const { email } = await params;
 
-    if (!email) {
-      return NextResponse.json({ error: "Missing email parameter" }, { status: 400 });
+    if (!email || typeof email !== "string") {
+      return NextResponse.json({ error: "Invalid or missing email parameter" }, { status: 400 });
+    }
+
+    if (session.user.email === email) {
+      return NextResponse.json({ error: "Cannot purge your own identity" }, { status: 400 });
     }
 
     await dbConnect();

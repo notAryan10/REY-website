@@ -48,6 +48,17 @@ export async function POST(
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
+    // Validate parentId if provided
+    if (parentId) {
+      const parentComment = await Comment.findById(parentId);
+      if (!parentComment) {
+        return NextResponse.json({ error: "Parent comment not found" }, { status: 400 });
+      }
+      if (parentComment.projectId.toString() !== id) {
+        return NextResponse.json({ error: "Parent comment does not belong to this project" }, { status: 400 });
+      }
+    }
+
     const newComment = await Comment.create({
       content,
       projectId: id,

@@ -20,12 +20,19 @@ export async function GET(
 
     const userRole = session?.user?.role || "spectator";
 
+    if (resource.accessLevel === "members") {
+      if (!session) {
+        return NextResponse.json({ 
+          error: "Authentication required for this resource.", 
+        }, { status: 401 });
+      }
 
-    if (resource.accessLevel === "members" && userRole === "spectator") {
-      return NextResponse.json({ 
-        error: "Forbidden: Higher clearance required.", 
-        required: "Respawner+" 
-      }, { status: 403 });
+      if (userRole === "spectator") {
+        return NextResponse.json({ 
+          error: "Forbidden: Higher clearance required.", 
+          required: "Respawner+" 
+        }, { status: 403 });
+      }
     }
 
     console.log(`DOWNLOAD GRANTED: ${resource.title} to ${session?.user?.email || "anonymous"}`);

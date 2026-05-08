@@ -96,6 +96,38 @@ function LoginForm() {
           "Authenticate"
         )}
       </Button>
+
+      <div className="mt-8 pt-8 border-t border-border/50 text-center space-y-6">
+        <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary">// Alternative Channels</p>
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-3">
+            <Button 
+              variant="secondary" 
+              type="button"
+              className="flex-1 text-[10px] group"
+              onClick={() => signIn("discord", { callbackUrl })}
+            >
+              <Globe size={16} className="mr-2 group-hover:text-white transition-colors" /> Discord
+            </Button>
+            <Button 
+              variant="secondary" 
+              type="button"
+              className="flex-1 text-[10px] group"
+              onClick={() => signIn("google", { callbackUrl })}
+            >
+              <Shield size={16} className="mr-2 group-hover:text-white transition-colors" /> Google
+            </Button>
+          </div>
+          <Button 
+            variant="secondary" 
+            type="button"
+            className="w-full text-[10px] group"
+            onClick={() => signIn("github", { callbackUrl })}
+          >
+            <Lock size={16} className="mr-2 group-hover:text-white transition-colors" /> GitHub
+          </Button>
+        </div>
+      </div>
     </form>
   );
 }
@@ -115,18 +147,6 @@ export default function LoginPage() {
                 }>
                   <LoginForm />
                 </Suspense>
-
-                <div className="mt-8 pt-8 border-t border-border/50 text-center space-y-6">
-                   <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary">// Alternative Channels</p>
-                   <div className="flex gap-4">
-                      <Button variant="secondary" className="flex-1 text-[10px] group">
-                         <Globe size={16} className="mr-2 group-hover:text-white transition-colors" /> Discord
-                      </Button>
-                      <Button variant="secondary" className="flex-1 text-[10px] group">
-                         <Shield size={16} className="mr-2 group-hover:text-white transition-colors" /> Google
-                      </Button>
-                   </div>
-                </div>
              </Card>
           </Section>
         </div>

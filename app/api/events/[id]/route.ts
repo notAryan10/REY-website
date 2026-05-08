@@ -19,9 +19,15 @@ export async function GET(
     const session = await getUserFromSession();
     const userRole = session?.user?.role || "spectator";
 
-    // If spectator, only allow public events and filter out workshops
-    if (userRole === "spectator" && (!event.isPublic || event.type === "workshop")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // Access control logic
+    if (event.type === "workshop" || !event.isPublic) {
+      if (!session) {
+        return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+      }
+      
+      if (userRole === "spectator") {
+        return NextResponse.json({ error: "Forbidden: Members only" }, { status: 403 });
+      }
     }
 
     return NextResponse.json(event);
