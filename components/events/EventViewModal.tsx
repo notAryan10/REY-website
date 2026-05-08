@@ -7,13 +7,15 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 
+import { IEvent } from "@/types";
+
 interface EventViewModalProps {
-  event: any;
+  event: IEvent;
   onClose: () => void;
 }
 
 export function EventViewModal({ event: initialEvent, onClose }: EventViewModalProps) {
-  const [event, setEvent] = React.useState(initialEvent);
+  const [event, setEvent] = React.useState<IEvent>(initialEvent);
   const [syncing, setSyncing] = React.useState(false);
 
   React.useEffect(() => {
@@ -28,8 +30,8 @@ export function EventViewModal({ event: initialEvent, onClose }: EventViewModalP
         const data = await res.json();
         setEvent(data);
       }
-    } catch (err) {
-      console.error("Sync failed:", err);
+    } catch {
+      console.error("Sync failed:");
     } finally {
       setTimeout(() => setSyncing(false), 500);
     }
@@ -129,7 +131,7 @@ export function EventViewModal({ event: initialEvent, onClose }: EventViewModalP
 
                   <div className="space-y-2">
                     {event.leaderboard && event.leaderboard.length > 0 ? (
-                      event.leaderboard.sort((a: any, b: any) => a.rank - b.rank).map((entry: any, idx: number) => (
+                      [...event.leaderboard].sort((a, b) => a.rank - b.rank).map((entry, idx) => (
                         <div key={idx} className="flex items-center justify-between p-3 bg-stone/20 border border-border/30 rounded-lg group hover:border-sand/30 transition-all">
                           <div className="flex items-center gap-3">
                             <span className={`w-5 h-5 flex items-center justify-center rounded text-[10px] font-pixel ${

@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       });
 
       return NextResponse.json({ message: "If an account with that email exists, a password reset link has been sent." });
-    } catch (err) {
+    } catch {
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
 

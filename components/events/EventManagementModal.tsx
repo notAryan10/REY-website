@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { X, Calendar, Trophy, Plus, Trash2, Loader2, Check, AlertCircle } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
+import { IEvent } from "@/types";
 
 interface LeaderboardEntry {
   playerName: string;
@@ -15,9 +15,9 @@ interface LeaderboardEntry {
 }
 
 interface EventManagementModalProps {
-  event: any;
+  event: IEvent;
   onClose: () => void;
-  onUpdate: (updatedEvent: any) => void;
+  onUpdate: (updatedEvent: IEvent) => void;
 }
 
 export function EventManagementModal({ event, onClose, onUpdate }: EventManagementModalProps) {
@@ -25,7 +25,7 @@ export function EventManagementModal({ event, onClose, onUpdate }: EventManageme
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // Helper to format date for datetime-local input (YYYY-MM-DDTHH:mm)
-  const formatForInput = (dateInput: any) => {
+  const formatForInput = (dateInput: string | Date | undefined) => {
     if (!dateInput) return "";
     const date = new Date(dateInput);
     if (isNaN(date.getTime())) return "";
@@ -67,11 +67,11 @@ export function EventManagementModal({ event, onClose, onUpdate }: EventManageme
   };
 
   const handleRemoveLeaderboardEntry = (index: number) => {
-    const newLeaderboard = formData.leaderboard.filter((_: any, i: number) => i !== index);
+    const newLeaderboard = formData.leaderboard.filter((_, i: number) => i !== index);
     setFormData({ ...formData, leaderboard: newLeaderboard });
   };
 
-  const handleLeaderboardChange = (index: number, field: string, value: any) => {
+  const handleLeaderboardChange = (index: number, field: keyof LeaderboardEntry, value: string | number) => {
     const newLeaderboard = [...formData.leaderboard];
     newLeaderboard[index] = { ...newLeaderboard[index], [field]: value };
     setFormData({ ...formData, leaderboard: newLeaderboard });
@@ -82,7 +82,7 @@ export function EventManagementModal({ event, onClose, onUpdate }: EventManageme
     setLoading(true);
     setStatus(null);
 
-    const dataToSend: any = {
+    const dataToSend: Partial<IEvent> & { leaderboard: LeaderboardEntry[]; players: string } = {
       ...formData,
       leaderboard: formData.leaderboard,
       players: formData.players
@@ -218,7 +218,7 @@ export function EventManagementModal({ event, onClose, onUpdate }: EventManageme
               </div>
 
               <div className="space-y-3">
-                {formData.leaderboard.map((entry: any, index: number) => (
+                {formData.leaderboard.map((entry: LeaderboardEntry, index: number) => (
                   <div key={index} className="grid grid-cols-12 gap-3 items-end p-4 bg-stone/10 border border-border/30 rounded-lg">
                     <div className="col-span-1 space-y-1">
                       <label className="text-[8px] uppercase font-pixel text-text-secondary">Rank</label>

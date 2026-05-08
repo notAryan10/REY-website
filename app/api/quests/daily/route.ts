@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import UserQuest from "@/models/UserQuest";
 import User from "@/models/User";
-import Quest from "@/models/Quest"; // Ensure Quest is registered
+import "@/models/Quest"; // Ensure Quest is registered
 import { getUserFromSession } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await getUserFromSession();
     if (!session || !session.user?.email) {
@@ -14,10 +14,6 @@ export async function GET(req: NextRequest) {
 
     await dbConnect();
     
-    // Ensure Quest model is registered for populate
-    // Accessing it once prevents tree-shaking in some environments
-    const questModel = Quest;
-
     // Get true user ID from DB using email to be safe
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
@@ -33,11 +29,12 @@ export async function GET(req: NextRequest) {
       .sort({ createdAt: -1 });
 
     return NextResponse.json(userQuests);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Failed to fetch daily quests:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ 
         error: "Internal Server Error", 
-        details: error.message 
+        details: errorMessage 
     }, { status: 500 });
   }
 }

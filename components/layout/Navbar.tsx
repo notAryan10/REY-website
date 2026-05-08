@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
@@ -12,10 +12,11 @@ import { Badge } from "../ui/Badge";
 import { UserXP } from "../ui/UserXP";
 import { LeaderboardCard } from "../dashboard/LeaderboardCard";
 import { calculateLevel } from "@/lib/xp";
+import { User as AppUser } from "@/types";
 
 export const Navbar = () => {
   const { data: session, status } = useSession();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<AppUser | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
@@ -23,25 +24,29 @@ export const Navbar = () => {
 
   // Prioritize live data from database
   const userRole = profile?.role || session?.user?.role || "spectator";
-  const userXp = profile?.xp ?? (session?.user as any)?.xp ?? 0;
+  const userXp = profile?.xp ?? (session?.user as AppUser)?.xp ?? 0;
   const userStats = calculateLevel(userXp);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (status === "authenticated") {
-        try {
-          const res = await fetch("/api/user/profile");
-          if (res.ok) {
-            const data = await res.json();
-            setProfile(data);
-          }
-        } catch (err) {
-          console.error("Failed to fetch profile in Navbar:", err);
+  const fetchProfile = useCallback(async () => {
+    if (status === "authenticated") {
+      try {
+        const res = await fetch("/api/user/profile");
+        if (res.ok) {
+          const data = (await res.json()) as AppUser;
+          setProfile(data);
         }
+      } catch {
+        console.error("Failed to fetch profile in Navbar:");
       }
-    };
-    fetchProfile();
+    }
   }, [status]);
+
+  useEffect(() => {
+    const init = async () => {
+      await fetchProfile();
+    };
+    init();
+  }, [fetchProfile]);
 
   const navLinks = [
     { name: "Home", href: "/" },

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { 
   Gamepad2, User, Heart, MessageSquare, Send, 
@@ -10,32 +10,38 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { motion, AnimatePresence } from "framer-motion";
+import { IProject } from "@/types";
 
 interface ProjectCardProps {
-  project: any;
+  project: IProject;
+}
+
+interface Comment {
+  _id: string;
+  content: string;
+  parentId: string | null;
+  createdAt: string | Date;
+  userId: {
+    name: string;
+    role: string;
+  };
 }
 
 export const ProjectCard = ({ project: initialProject }: ProjectCardProps) => {
   const { data: session, status } = useSession();
-  const [project, setProject] = React.useState(initialProject);
+  const [project, setProject] = React.useState<IProject>(initialProject);
   const [isLiked, setIsLiked] = React.useState(
-    initialProject.likes?.includes(session?.user?.id) || false
+    initialProject.likes?.includes(session?.user?.id as string) || false
   );
   const [showComments, setShowComments] = React.useState(false);
-  const [comments, setComments] = React.useState<any[]>([]);
+  const [comments, setComments] = React.useState<Comment[]>([]);
   const [loadingComments, setLoadingComments] = React.useState(false);
   const [newComment, setNewComment] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [replyTo, setReplyTo] = React.useState<string | null>(null);
   const [replyContent, setReplyContent] = React.useState("");
 
-  React.useEffect(() => {
-    if (showComments) {
-      fetchComments();
-    }
-  }, [showComments]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     setLoadingComments(true);
     try {
       const res = await fetch(`/api/projects/${project._id}/comments`);
@@ -43,33 +49,40 @@ export const ProjectCard = ({ project: initialProject }: ProjectCardProps) => {
         const data = await res.json();
         setComments(data);
       }
-    } catch (err) {
-      console.error("Failed to fetch comments:", err);
+    } catch {
+      console.error("Failed to fetch comments");
     } finally {
       setLoadingComments(false);
     }
-  };
+  }, [project._id]);
+
+  React.useEffect(() => {
+    if (showComments) {
+      fetchComments();
+    }
+  }, [showComments, fetchComments]);
 
   const handleLike = async () => {
-    if (status !== "authenticated") return alert("Authentication required to signal appreciation.");
+    if (status !== "authenticated" || !session?.user?.id) return alert("Authentication required to signal appreciation.");
     
+    const userId = session.user.id;
     const previousIsLiked = isLiked;
-    const previousLikes = project.likes?.length || 0;
+    const previousLikes = [...project.likes];
     
     setIsLiked(!isLiked);
     setProject({
       ...project,
       likes: !isLiked 
-        ? [...(project.likes || []), session.user.id]
-        : (project.likes || []).filter((id: string) => id !== session.user.id)
+        ? [...project.likes, userId]
+        : project.likes.filter((id: string) => id !== userId)
     });
 
     try {
       const res = await fetch(`/api/projects/${project._id}/like`, { method: "POST" });
       if (!res.ok) throw new Error();
-    } catch (err) {
+    } catch {
       setIsLiked(previousIsLiked);
-      setProject({ ...project, likes: new Array(previousLikes) }); 
+      setProject({ ...project, likes: previousLikes }); 
     }
   };
 
@@ -95,14 +108,14 @@ export const ProjectCard = ({ project: initialProject }: ProjectCardProps) => {
           setNewComment("");
         }
       }
-    } catch (err) {
-      console.error("Comment failed:", err);
+    } catch {
+      console.error("Comment failed");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const renderCommentThread = (parentId: string | null = null, depth = 0) => {
+  const renderCommentThread = (parentId: string | null = null, depth = 0): React.ReactNode => {
     const filtered = comments.filter(c => c.parentId === parentId);
     if (filtered.length === 0) return null;
 
@@ -161,10 +174,10 @@ export const ProjectCard = ({ project: initialProject }: ProjectCardProps) => {
   };
 
   return (
-    <Card accent={project.accent as any} className="group hover:bg-stone/10 transition-all duration-300 flex flex-col h-full overflow-visible">
+    <Card accent={project.accent} className="group hover:bg-stone/10 transition-all duration-300 flex flex-col h-full overflow-visible">
       <div className="flex-1 space-y-4">
         <div className="flex justify-between items-start">
-          <Badge variant={project.accent as any}>{project.tag}</Badge>
+          <Badge variant={project.accent}>{project.tag}</Badge>
           <span className="text-[8px] font-pixel text-text-secondary uppercase opacity-50">
             {new Date(project.createdAt).toLocaleDateString()}
           </span>
@@ -195,7 +208,7 @@ export const ProjectCard = ({ project: initialProject }: ProjectCardProps) => {
 
       <div className="mt-6 flex gap-2">
         <Button 
-          variant={project.accent as any} 
+          variant={project.accent} 
           size="sm" 
           className="flex-1 font-pixel text-[10px] tracking-widest h-10 group-hover:scale-[1.02] transition-transform"
           onClick={() => window.open(project.itchIoUrl, "_blank")}

@@ -11,13 +11,14 @@ import { Badge } from "@/components/ui/Badge";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 import { EventManagementModal } from "@/components/events/EventManagementModal";
 import { EventViewModal } from "@/components/events/EventViewModal";
+import { IEvent } from "@/types";
 
 export default function EventsPage() {
   const { data: session } = useSession();
-  const [events, setEvents] = React.useState<any[]>([]);
+  const [events, setEvents] = React.useState<IEvent[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [managingEvent, setManagingEvent] = React.useState<any>(null);
-  const [viewingEvent, setViewingEvent] = React.useState<any>(null);
+  const [managingEvent, setManagingEvent] = React.useState<IEvent | null>(null);
+  const [viewingEvent, setViewingEvent] = React.useState<IEvent | null>(null);
 
   const fetchEvents = async () => {
     try {
@@ -41,7 +42,7 @@ export default function EventsPage() {
     fetchEvents();
   }, []);
 
-  const handleJoinEvent = (event: any) => {
+  const handleJoinEvent = (event: IEvent) => {
     const userRole = session?.user?.role;
 
     if (userRole === "architect") {
@@ -50,7 +51,7 @@ export default function EventsPage() {
     }
 
     if (session?.user?.id) {
-      socket.emit("xp:add", { userId: (session.user as any).id, action: "event_join" });
+      socket.emit("xp:add", { userId: session.user.id, action: "event_join" });
       setViewingEvent(event);
       // alert(`Joined ${event.title}! +20 XP incoming... ⚡`); // Alert removed for better UX, modal shows details
     } else {
@@ -58,7 +59,7 @@ export default function EventsPage() {
     }
   };
 
-  const handleEventUpdate = (updatedEvent: any) => {
+  const handleEventUpdate = (updatedEvent: IEvent) => {
     setEvents(events.map(ev => ev._id === updatedEvent._id ? updatedEvent : ev));
   };
 
@@ -121,7 +122,7 @@ export default function EventsPage() {
                             <Trophy size={10} className="text-sand" />
                           </div>
                           <div className="space-y-1">
-                            {event.leaderboard.slice(0, 3).sort((a: any, b: any) => a.rank - b.rank).map((entry: any, idx: number) => (
+                            {event.leaderboard.slice(0, 3).sort((a, b) => a.rank - b.rank).map((entry, idx: number) => (
                               <div key={idx} className="flex justify-between text-[10px] font-sans">
                                 <span className="text-white/90">#{entry.rank} {entry.playerName}</span>
                                 <span className="text-sand font-pixel">{entry.score}</span>

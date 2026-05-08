@@ -3,6 +3,7 @@ import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 import Achievement from "@/models/Achievement";
 import { getUserFromSession, hasPermission } from "@/lib/auth";
+import { UserAchievement } from "@/types";
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     // Check if already unlocked
     const alreadyUnlocked = user.achievements.find(
-      (a: any) => a.achievementId.toString() === achievementId && a.unlocked
+      (a: UserAchievement) => a.achievementId.toString() === achievementId && a.unlocked
     );
 
     if (alreadyUnlocked) {
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     // Update or push achievement
     const achIndex = user.achievements.findIndex(
-      (a: any) => a.achievementId.toString() === achievementId
+      (a: UserAchievement) => a.achievementId.toString() === achievementId
     );
 
     if (achIndex > -1) {

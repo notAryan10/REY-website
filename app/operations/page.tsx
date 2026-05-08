@@ -4,17 +4,9 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { 
-  Zap, 
-  Trophy, 
   Target, 
-  Clock, 
-  Layout, 
   Terminal, 
-  Shield, 
-  Activity,
-  ChevronRight,
   Lock,
-  Loader2
 } from "lucide-react";
 import { Section } from "@/components/layout/Section";
 import { Container } from "@/components/ui/Container";
@@ -25,11 +17,12 @@ import { Button } from "@/components/ui/Button";
 import { QuestCard } from "@/components/operations/QuestCard";
 import { StatsOverview } from "@/components/operations/StatsOverview";
 import { ActivityFeed } from "@/components/operations/ActivityFeed";
+import { IUserQuest, IStreak } from "@/types";
 
 export default function OperationsPage() {
   const { data: session } = useSession();
-  const [quests, setQuests] = useState<any[]>([]);
-  const [streak, setStreak] = useState<any>(null);
+  const [quests, setQuests] = useState<IUserQuest[]>([]);
+  const [streak, setStreak] = useState<IStreak | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
   const [xpPopups, setXpPopups] = useState<{ id: number, amount: number }[]>([]);
@@ -45,13 +38,7 @@ export default function OperationsPage() {
     "Hidden"
   ];
 
-  useEffect(() => {
-    if (session) {
-      fetchData();
-    }
-  }, [session]);
-
-  const fetchData = async () => {
+  const fetchData = React.useCallback(async () => {
     // Check if we gained XP (simplified check)
     const oldQuests = [...quests];
     
@@ -63,10 +50,10 @@ export default function OperationsPage() {
       ]);
 
       if (questsRes.ok) {
-        const newQuests = await questsRes.json();
+        const newQuests: IUserQuest[] = await questsRes.json();
         
         // Find newly completed quests to show XP popups
-        newQuests.forEach((nq: any) => {
+        newQuests.forEach((nq) => {
             const oldQ = oldQuests.find(oq => oq._id === nq._id);
             if (oldQ && !oldQ.completed && nq.completed) {
                 const id = Date.now() + Math.random();
@@ -85,7 +72,13 @@ export default function OperationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [quests]);
+
+  useEffect(() => {
+    if (session) {
+      fetchData();
+    }
+  }, [session, fetchData]);
 
   const filteredQuests = quests.filter(uq => {
     if (activeCategory === "All") return true;

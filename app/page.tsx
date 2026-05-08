@@ -3,21 +3,22 @@
 import React from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, Zap, Trophy, Users, Shield, Rocket, ExternalLink, Box, Calendar, FileText, ChevronRight } from "lucide-react";
+import { Zap, Rocket, ExternalLink, Box, Calendar, ChevronRight } from "lucide-react";
 import { Section } from "@/components/layout/Section";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
+import { IEvent, IProject, IResource } from "@/types";
 
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 import FallingText from "@/components/ui/FallingText";
 
 export default function Home() {
-  const [latestEvent, setLatestEvent] = React.useState<any>(null);
-  const [latestProject, setLatestProject] = React.useState<any>(null);
-  const [latestResource, setLatestResource] = React.useState<any>(null);
+  const [latestEvent, setLatestEvent] = React.useState<IEvent | null>(null);
+  const [latestProject, setLatestProject] = React.useState<IProject | null>(null);
+  const [latestResource, setLatestResource] = React.useState<IResource | null>(null);
   const [loading, setLoading] = React.useState(true);
   const { scrollY } = useScroll();
   const y1 = useTransform(scrollY, [0, 500], [0, 200]);
@@ -189,8 +190,7 @@ export default function Home() {
                     </div>
                     <p className="text-text-secondary text-sm font-sans">{role.desc}</p>
                     <div className="space-y-2 pt-4">
-                      <p className="text-[10px] uppercase text-text-secondary font-pixel tracking-widest">// Capabilities</p>
-                      <ul className="space-y-2">
+                      <p className="text-[10px] uppercase text-text-secondary font-pixel tracking-widest">{"// "} Capabilities</p>                      <ul className="space-y-2">
                         {role.capabilities.map((cap, j) => (
                           <li key={j} className="flex items-center gap-2 text-xs text-white">
                             <div className={`w-1 h-1 rounded-full bg-${role.variant}`} />

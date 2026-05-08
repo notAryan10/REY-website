@@ -35,7 +35,7 @@ export async function GET(
 }
 
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -44,7 +44,7 @@ export async function DELETE(
 
     try {
       requireRole(session, ["architect"]);
-    } catch (err) {
+    } catch {
       return NextResponse.json({ error: "Forbidden: Architect Clearance Required" }, { status: 403 });
     }
 

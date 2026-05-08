@@ -10,10 +10,11 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 import { motion } from "framer-motion";
+import { IResource } from "@/types";
 
 export default function ResourcesPage() {
   const { data: session, status } = useSession();
-  const [resources, setResources] = React.useState<any[]>([]);
+  const [resources, setResources] = React.useState<IResource[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -42,7 +43,7 @@ export default function ResourcesPage() {
   const publicResources = resources.filter(r => r.accessLevel === "public");
   const memberResources = resources.filter(r => r.accessLevel === "members");
 
-  const handleDownload = (res: any) => {
+  const handleDownload = (res: IResource) => {
     if (res._id) {
        // Direct to secure download API instead of Cloudinary URL
        window.open(`/api/download/${res._id}`, "_blank");
@@ -70,7 +71,7 @@ export default function ResourcesPage() {
                        ))
                     ) : publicResources.length > 0 ? (
                       publicResources.map((res, i) => (
-                        <Card key={i} accent={res.accent as any || "sky"} className="group transition-all duration-300 hover:bg-stone/10">
+                        <Card key={i} accent={res.accent || "sky"} className="group transition-all duration-300 hover:bg-stone/10">
                            <div className="flex flex-col h-full space-y-4">
                               <div className="flex items-center gap-4">
                                  <div className={`p-3 bg-${res.accent || "sky"}/10 border border-${res.accent || "sky"}/20 rounded`}>
@@ -82,7 +83,7 @@ export default function ResourcesPage() {
                                  </div>
                               </div>
                               <Button 
-                                variant={(res.accent as any) || "sky"} 
+                                variant={res.accent || "sky"} 
                                 size="sm" 
                                 className="w-full h-10 uppercase font-pixel text-[10px] tracking-widest"
                                 onClick={() => handleDownload(res)}
@@ -119,7 +120,7 @@ export default function ResourcesPage() {
                       memberResources.map((res, i) => {
                         const isLocked = !isMember;
                         return (
-                          <Card key={i} accent={(res.accent as any) || "lava"} className="group hover:bg-stone/10 transition-all duration-300 relative overflow-hidden">
+                          <Card key={i} accent={res.accent || "lava"} className="group hover:bg-stone/10 transition-all duration-300 relative overflow-hidden">
                              {/* Locked UI Overlay */}
                              {isLocked && (
                                <motion.div 
@@ -160,7 +161,7 @@ export default function ResourcesPage() {
                                 </div>
                                 <div className="pt-4 border-t border-border/50">
                                    <Button 
-                                     variant={isLocked ? "ghost" : ((res.accent as any) || "lava")} 
+                                     variant={isLocked ? "ghost" : (res.accent || "lava")} 
                                      disabled={isLocked} 
                                      className="w-full h-10 text-[10px] uppercase font-pixel tracking-widest"
                                      onClick={() => handleDownload(res)}

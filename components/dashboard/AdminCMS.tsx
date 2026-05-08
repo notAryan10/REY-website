@@ -9,13 +9,34 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 
+interface Event {
+  _id: string;
+  title: string;
+  description: string;
+  type: string;
+  date: string;
+  accent: "grass" | "lava" | "sky" | "sand" | "stone";
+  isPublic: boolean;
+}
+
+interface Resource {
+  _id: string;
+  title: string;
+  accent?: "grass" | "lava" | "sky" | "sand" | "stone";
+  type?: string;
+  size?: string;
+  accessLevel: string;
+}
+
+type AccentColor = "grass" | "lava" | "sky" | "sand" | "stone";
+
 export function AdminCMS() {
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<"events" | "resources">("events");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [events, setEvents] = useState<any[]>([]);
-  const [resources, setResources] = useState<any[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [resources, setResources] = useState<Resource[]>([]);
   const [resourceLoading, setResourceLoading] = useState(false);
 
   const [eventForm, setEventForm] = useState({
@@ -23,7 +44,7 @@ export function AdminCMS() {
     description: "",
     type: "event",
     date: "",
-    accent: "sky",
+    accent: "sky" as AccentColor,
     isPublic: true,
   });
 
@@ -32,7 +53,7 @@ export function AdminCMS() {
     file: null as File | null,
     eventId: "",
     accessLevel: "public",
-    accent: "sky",
+    accent: "sky" as AccentColor,
   });
 
   useEffect(() => {
@@ -47,7 +68,7 @@ export function AdminCMS() {
         const data = await res.json();
         setEvents(data);
       }
-    } catch (err) {
+    } catch {
       console.error("Failed to fetch events", err);
     }
   };
@@ -60,7 +81,7 @@ export function AdminCMS() {
         const data = await res.json();
         setResources(data);
       }
-    } catch (err) {
+    } catch {
       console.error("Failed to fetch resources", err);
     } finally {
       setResourceLoading(false);
@@ -81,13 +102,13 @@ export function AdminCMS() {
 
       if (res.ok) {
         setStatus({ type: "success", message: "Event created successfully! ⚡" });
-        setEventForm({ title: "", description: "", type: "event", date: "", accent: "sky", isPublic: true });
+        setEventForm({ title: "", description: "", type: "event", date: "", accent: "sky" as AccentColor, isPublic: true });
         fetchEvents();
       } else {
         const error = await res.json();
         setStatus({ type: "error", message: error.error || "Failed to create event" });
       }
-    } catch (err) {
+    } catch {
       setStatus({ type: "error", message: "An unexpected error occurred" });
     } finally {
       setLoading(false);
@@ -122,7 +143,7 @@ export function AdminCMS() {
           socket.emit("xp:add", { userId: session.user.id, action: "project_upload" });
         }
         
-        setResourceForm({ title: "", file: null, eventId: "", accessLevel: "public", accent: "sky" });
+        setResourceForm({ title: "", file: null, eventId: "", accessLevel: "public", accent: "sky" as AccentColor });
         fetchResources(); // Refresh archive list
       } else {
         const error = await res.json();
@@ -130,8 +151,8 @@ export function AdminCMS() {
         console.error("UPLOAD_ERROR:", error);
         setStatus({ type: "error", message: errorMessage });
       }
-    } catch (err) {
-      console.error("FATAL_UPLOAD_ERROR:", err);
+    } catch {
+      console.error("FATAL_UPLOAD_ERROR:");
       setStatus({ type: "error", message: "Network error or server crash during transit" });
     } finally {
       setLoading(false);
@@ -150,7 +171,7 @@ export function AdminCMS() {
         const error = await res.json();
         setStatus({ type: "error", message: error.error || "Failed to delete" });
       }
-    } catch (err) {
+    } catch {
       setStatus({ type: "error", message: "An unexpected error occurred during purging." });
     }
   };
@@ -185,7 +206,7 @@ export function AdminCMS() {
           transition={{ duration: 0.3 }}
         >
           {activeTab === "events" ? (
-            <Card accent={eventForm.accent as any} className="max-w-2xl">
+            <Card accent={eventForm.accent} className="max-w-2xl">
               <div className="flex items-center gap-3 mb-8">
                 <div className={`p-2 bg-${eventForm.accent}/10 rounded-lg`}>
                   <Calendar className={`text-${eventForm.accent}`} size={20} />
@@ -258,7 +279,7 @@ export function AdminCMS() {
                         <button
                           key={color}
                           type="button"
-                          onClick={() => setEventForm({ ...eventForm, accent: color })}
+                          onClick={() => setEventForm({ ...eventForm, accent: color as AccentColor })}
                           className={`w-8 h-8 rounded-full border-2 transition-all ${
                             eventForm.accent === color ? "border-white scale-110 shadow-lg" : "border-transparent opacity-50 hover:opacity-100"
                           }`}
@@ -297,7 +318,7 @@ export function AdminCMS() {
                 <div className="pt-4">
                   <Button 
                     type="submit"
-                    variant={eventForm.accent as any} 
+                    variant={eventForm.accent} 
                     className="w-full h-12 uppercase font-pixel tracking-[0.2em] text-xs" 
                     disabled={loading}
                   >
@@ -309,7 +330,7 @@ export function AdminCMS() {
             </Card>
           ) : (
             <div className="space-y-8">
-              <Card accent={resourceForm.accent as any} className="max-w-2xl">
+              <Card accent={resourceForm.accent} className="max-w-2xl">
                 <div className="flex items-center gap-3 mb-8">
                   <div className={`p-2 bg-${resourceForm.accent}/10 rounded-lg`}>
                     <Upload className={`text-${resourceForm.accent}`} size={20} />
@@ -389,7 +410,7 @@ export function AdminCMS() {
                         <button
                           key={color}
                           type="button"
-                          onClick={() => setResourceForm({ ...resourceForm, accent: color })}
+                          onClick={() => setResourceForm({ ...resourceForm, accent: color as AccentColor })}
                           className={`w-8 h-8 rounded-full border-2 transition-all ${
                             resourceForm.accent === color ? "border-white scale-110 shadow-lg" : "border-transparent opacity-50 hover:opacity-100"
                           }`}

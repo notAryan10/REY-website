@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import UserQuest from "@/models/UserQuest";
 import User from "@/models/User";
-import Quest from "@/models/Quest";
+import "@/models/Quest";
 import { getUserFromSession } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
@@ -19,10 +19,6 @@ export async function POST(req: NextRequest) {
     }
 
     await dbConnect();
-
-    // Force model registration
-    const _Quest = Quest;
-    const _User = User;
 
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
@@ -42,7 +38,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Quest already completed" });
     }
 
-    const quest = userQuest.questId as any;
+    interface QuestDetails {
+      requirement: number;
+      xpReward: number;
+    }
+    const quest = userQuest.questId as unknown as QuestDetails;
     userQuest.progress += increment;
 
     if (userQuest.progress >= quest.requirement) {
@@ -61,11 +61,12 @@ export async function POST(req: NextRequest) {
       message: userQuest.completed ? "Mission Complete!" : "Progress recorded",
       userQuest 
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Failed to update quest progress:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ 
         error: "Internal Server Error",
-        details: error.message 
+        details: errorMessage 
     }, { status: 500 });
   }
 }

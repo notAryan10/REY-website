@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import AuditLog from "@/models/AuditLog";
 import { getUserFromSession } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await getUserFromSession();
     if (!session || !["Founder", "Core Architect", "Moderator"].includes(session.user.role)) {

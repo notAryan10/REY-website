@@ -18,11 +18,15 @@ interface FeedItem {
 
 export function ActivityFeed() {
   const [activities, setActivities] = useState<FeedItem[]>([]);
+  const [now, setNow] = useState<number>(0);
 
   useEffect(() => {
+    const updateTime = () => setNow(Date.now());
+    updateTime();
+    
     socket.connect();
 
-    socket.on("operation:log_update", (newActivity: any) => {
+    socket.on("operation:log_update", (newActivity: FeedItem) => {
       const item: FeedItem = {
         ...newActivity,
         timestamp: new Date(newActivity.timestamp)
@@ -30,8 +34,11 @@ export function ActivityFeed() {
       setActivities(prev => [item, ...prev].slice(0, 10));
     });
 
+    const timer = setInterval(updateTime, 60000);
+
     return () => {
       socket.off("operation:log_update");
+      clearInterval(timer);
     };
   }, []);
 
@@ -72,7 +79,7 @@ export function ActivityFeed() {
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-[8px] font-pixel text-architect-gold">{activity.reward}</span>
                   <span className="text-[8px] text-text-secondary uppercase">
-                    {Math.floor((Date.now() - activity.timestamp.getTime()) / 60000)}M AGO
+                    {Math.floor((now - activity.timestamp.getTime()) / 60000)}M AGO
                   </span>
                 </div>
               </div>

@@ -8,7 +8,6 @@ import Link from "next/link";
 import { Section } from "@/components/layout/Section";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 
 function RegisterForm() {
   const router = useRouter();
@@ -43,7 +42,7 @@ function RegisterForm() {
       } else {
         router.push(`/login?success=Account+created.+Please+sign+in.&callbackUrl=${encodeURIComponent(callbackUrl)}`);
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred.");
       setIsLoading(false);
     }
@@ -194,8 +193,7 @@ function RegisterForm() {
           <span className="text-white">Collective Governance Charter</span>.
         </p>
 
-        <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary pt-4 border-t border-border/20">// Alternative Channels</p>
-        <div className="flex flex-col gap-3">
+        <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary pt-4 border-t border-border/20">{"// "} Alternative Channels</p>        <div className="flex flex-col gap-3">
           <div className="flex gap-3">
             <Button 
               variant="secondary" 

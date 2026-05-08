@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromSession, requireRole } from "@/lib/auth";
+import { getUserFromSession } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import Resource from "@/models/Resource";
 
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {

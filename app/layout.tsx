@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Press_Start_2P } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
-import { PageTransition } from "@/components/layout/PageTransition";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { AchievementPopup } from "@/components/ui/AchievementPopup";
 

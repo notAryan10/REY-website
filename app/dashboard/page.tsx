@@ -6,7 +6,6 @@ import { useSession, signOut } from "next-auth/react";
 import { User, Shield, Zap, Trophy, LayoutDashboard, Settings, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { Section } from "@/components/layout/Section";
-import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -17,10 +16,23 @@ import { UserXP } from "@/components/ui/UserXP";
 import { calculateLevel } from "@/lib/xp";
 import { LeaderboardCard } from "@/components/dashboard/LeaderboardCard";
 
+interface Quest {
+  title: string;
+  reward: string;
+  status: string;
+}
+
+interface Profile {
+  role: string;
+  xp: number;
+  eventWins: number;
+  projectsLed: number;
+  quests: Quest[];
+}
+
 export default function DashboardPage() {
   const { data: session } = useSession();
-  const [profile, setProfile] = React.useState<any>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [profile, setProfile] = React.useState<Profile | null>(null);
 
   React.useEffect(() => {
     const fetchProfile = async () => {
@@ -32,8 +44,6 @@ export default function DashboardPage() {
         }
       } catch (err) {
         console.error("Failed to fetch profile:", err);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -143,7 +153,7 @@ export default function DashboardPage() {
                        <h2 className="text-3xl uppercase leading-tight font-pixel">Welcome Back, <span className="text-grass">{userRole}</span> ⚡</h2>
                        <p className="text-text-secondary text-sm font-sans max-w-xl">
                           Your reputation is growing. You are currently {userStats.nextLevelXp - userStats.currentLevelXp} XP away from reaching 
-                          the next level (LVL {userStats.level + 1}). Complete today's challenges to level up.
+                          the next level (LVL {userStats.level + 1}). Complete today&apos;s challenges to level up.
                        </p>
                        <div className="pt-4 flex gap-4">
                           <Link href="/projects">
@@ -177,7 +187,7 @@ export default function DashboardPage() {
                           <h3 className="text-lg uppercase font-pixel tracking-tighter">Your Active Quests</h3>
                           <div className="space-y-4">
                              {quests.length > 0 ? (
-                               quests.map((quest: any, i: number) => (
+                               quests.map((quest: Quest, i: number) => (
                                  <div key={i} className="flex items-center justify-between p-4 bg-stone/20 border-2 border-border transition-all duration-300 hover:border-sky/50 hover:bg-stone/30 text-white group cursor-pointer">
                                     <div className="flex items-center gap-4">
                                        <Shield size={20} className="text-sky group-hover:scale-110 transition-transform" />
@@ -227,3 +237,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+

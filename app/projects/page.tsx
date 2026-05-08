@@ -3,7 +3,7 @@
 import React from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { Gamepad2, ExternalLink, PlusCircle, User, Loader2, Rocket, Beaker } from "lucide-react";
+import { Loader2, Rocket, Beaker } from "lucide-react";
 import { socket } from "@/lib/socket";
 import { Section } from "@/components/layout/Section";
 import { Card } from "@/components/ui/Card";
@@ -12,10 +12,11 @@ import { Badge } from "@/components/ui/Badge";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProjectCard } from "@/components/projects/ProjectCard";
+import { IProject } from "@/types";
 
 export default function ProjectsPage() {
   const { data: session, status } = useSession();
-  const [projects, setProjects] = React.useState<any[]>([]);
+  const [projects, setProjects] = React.useState<IProject[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [showForm, setShowForm] = React.useState(false);
@@ -72,7 +73,7 @@ export default function ProjectsPage() {
         fetchProjects();
         
         if (session?.user?.id) {
-           socket.emit("xp:add", { userId: (session.user as any).id, action: "project_upload" });
+           socket.emit("xp:add", { userId: session.user.id, action: "project_upload" });
         }
       } else {
         const error = await res.json();
@@ -172,7 +173,7 @@ export default function ProjectsPage() {
                               <label className="text-[10px] uppercase font-pixel text-text-secondary">Visual Accent</label>
                               <div className="flex gap-4">
                                 {["sky", "lava", "grass"].map((a) => (
-                                  <button key={a} type="button" onClick={() => setFormData({...formData, accent: a as any})} className={`flex-1 py-3 px-2 border-2 uppercase font-pixel text-[8px] transition-all ${formData.accent === a ? `border-${a} bg-${a}/20 text-white`  : "border-border text-text-secondary hover:border-zinc-700" }`}>
+                                  <button key={a} type="button" onClick={() => setFormData({...formData, accent: a as "sky" | "lava" | "grass"})} className={`flex-1 py-3 px-2 border-2 uppercase font-pixel text-[8px] transition-all ${formData.accent === a ? `border-${a} bg-${a}/20 text-white`  : "border-border text-text-secondary hover:border-zinc-700" }`}>
                                     {a}
                                   </button>
                                 ))}

@@ -4,6 +4,7 @@ import Achievement from "@/models/Achievement";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import User from "@/models/User";
+import { UserAchievement } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,7 @@ export async function GET() {
     }
 
     const enrichedAchievements = achievements.map(a => {
-      const userRecord = user.achievements?.find((ua: any) => ua.achievementId?.toString() === a._id.toString());
+      const userRecord = user.achievements?.find((ua: UserAchievement) => ua.achievementId?.toString() === a._id.toString());
       return {
         ...a.toObject(),
         unlocked: userRecord?.unlocked || false,

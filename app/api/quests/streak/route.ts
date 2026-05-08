@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Streak from "@/models/Streak";
 import User from "@/models/User";
 import { getUserFromSession } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await getUserFromSession();
     if (!session || !session.user?.email) {
@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     await dbConnect();
 
     // Force model registration
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const _User = User;
 
     const user = await User.findOne({ email: session.user.email });
@@ -59,11 +60,12 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(streak);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Failed to fetch streak data:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ 
         error: "Internal Server Error", 
-        details: error.message 
+        details: errorMessage 
     }, { status: 500 });
   }
 }

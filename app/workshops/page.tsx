@@ -14,12 +14,13 @@ import { Badge } from "@/components/ui/Badge";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 
 import { EventManagementModal } from "@/components/events/EventManagementModal";
+import { IEvent } from "@/types";
 
 export default function WorkshopsPage() {
   const { data: session, status } = useSession();
-  const [workshops, setWorkshops] = React.useState<any[]>([]);
+  const [workshops, setWorkshops] = React.useState<IEvent[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [managingWorkshop, setManagingWorkshop] = React.useState<any>(null);
+  const [managingWorkshop, setManagingWorkshop] = React.useState<IEvent | null>(null);
 
   const fetchWorkshops = async () => {
     try {
@@ -45,14 +46,14 @@ export default function WorkshopsPage() {
   const userRole = session?.user?.role || "spectator";
   const hasAccess = status === "authenticated" && (userRole === "respawner" || userRole === "architect");
 
-  const handleAttendWorkshop = (workshop: any) => {
+  const handleAttendWorkshop = (workshop: IEvent) => {
     if (session?.user?.id) {
-       socket.emit("xp:add", { userId: (session.user as any).id, action: "workshop_attend" });
+       socket.emit("xp:add", { userId: session.user.id, action: "workshop_attend" });
        alert(`Entering ${workshop.title}... +30 XP gained! 📚`);
     }
   };
 
-  const handleUpdate = (updated: any) => {
+  const handleUpdate = (updated: IEvent) => {
     if (workshops.find(w => w._id === updated._id)) {
       setWorkshops(workshops.map(w => w._id === updated._id ? updated : w));
     } else {

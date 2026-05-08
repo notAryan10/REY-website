@@ -4,15 +4,13 @@ import Resource from "@/models/Resource";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { getUserFromSession, requireRole } from "@/lib/auth";
 
-export const dynamic = "force-dynamic";
-
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     await dbConnect();
     const session = await getUserFromSession();
     const userRole = session?.user?.role || "spectator";
 
-    let query: any = {};
+    const query: { accessLevel?: string } = {};
 
     // Spectators only see public resources
     if (userRole === "spectator") {
@@ -33,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     try {
       requireRole(session, ["architect"]);
-    } catch (err) {
+    } catch {
       console.warn("UPLOAD DENIED: Unauthorized or missing rank.", { session: !!session, role: session?.user?.role });
       return NextResponse.json({ error: "Forbidden: Architect Clearance Required" }, { status: 403 });
     }
@@ -45,8 +43,8 @@ export async function POST(req: NextRequest) {
     const file = formData.get("file") as File;
     const title = formData.get("title") as string;
     const eventId = formData.get("eventId") as string;
-    const accessLevel = formData.get("accessLevel") as string || "public";
-    const accent = formData.get("accent") as string || "sky";
+    const accessLevel = (formData.get("accessLevel") as string) || "public";
+    const accent = (formData.get("accent") as string) || "sky";
 
     console.log("UPLOAD META:", { title, fileName: file?.name, fileSize: file?.size, eventId });
 
@@ -64,21 +62,22 @@ export async function POST(req: NextRequest) {
 
     console.log("CLOUDINARY: Sending buffer to cloud storage...");
     // Upload to Cloudinary
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const uploadResult: any = await uploadToCloudinary(buffer, "rey-resources");
     console.log("CLOUDINARY: Transfer secure.", { url: uploadResult.secure_url });
 
     const newResource = await Resource.create({
       title,
       fileUrl: uploadResult.secure_url,
+      type: file.type || "application/octet-stream",
+      size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
       eventId: eventId || null,
       accessLevel,
-      uploadedBy: session!.user.id,
-      size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-      type: file.type.split("/")[1]?.toUpperCase() || "FILE",
       accent,
+      uploadedBy: session?.user?.id,
     });
 
-    console.log("DATABASE: Resource record logged.", { id: newResource._id });
+    console.log("DATABASE: Entry logged.", { id: newResource._id });
     return NextResponse.json(newResource, { status: 201 });
   } catch (error) {
     console.error("Error uploading resource:", error);

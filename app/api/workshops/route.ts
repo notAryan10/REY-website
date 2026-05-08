@@ -1,15 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Event from "@/models/Event";
-import { getUserFromSession } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     await dbConnect();
-    const session = await getUserFromSession();
-    const userRole = session?.user?.role || "spectator";
+    // const session = await getUserFromSession();
+    // const userRole = session?.user?.role || "spectator";
 
-    let query: any = { type: "workshop" };
+    const query: { type: string } = { type: "workshop" };
 
     // If spectator, they can only see workshops if they are public
     // AND the UI should show them as locked.

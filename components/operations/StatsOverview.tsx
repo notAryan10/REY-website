@@ -9,10 +9,11 @@ import {
   Clock 
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { IUserQuest, IStreak } from "@/types";
 
 interface StatsOverviewProps {
-  quests: any[];
-  streak: any;
+  quests: IUserQuest[];
+  streak: IStreak | null;
   loading: boolean;
 }
 

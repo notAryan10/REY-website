@@ -31,7 +31,7 @@ const FallingText: React.FC<FallingTextProps> = ({
   const textRef = useRef<HTMLDivElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
-  const [effectStarted, setEffectStarted] = useState(false);
+  const [effectStarted, setEffectStarted] = useState(trigger === 'auto');
 
   useEffect(() => {
     if (!textRef.current) return;
@@ -46,10 +46,7 @@ const FallingText: React.FC<FallingTextProps> = ({
   }, [text, highlightWords, highlightClass]);
 
   useEffect(() => {
-    if (trigger === 'auto') {
-      setEffectStarted(true);
-      return;
-    }
+    if (effectStarted) return;
     if (trigger === 'scroll' && containerRef.current) {
       const observer = new IntersectionObserver(
         ([entry]) => {
@@ -144,11 +141,9 @@ const FallingText: React.FC<FallingTextProps> = ({
       mouse,
       constraint: {
         stiffness: mouseConstraintStiffness,
-        // @ts-ignore
         render: { visible: false }
       }
     });
-    // @ts-ignore
     render.mouse = mouse;
 
     World.add(engine.world, [floor, leftWall, rightWall, ceiling, mouseConstraint, ...wordBodies.map(wb => wb.body)]);
@@ -169,12 +164,13 @@ const FallingText: React.FC<FallingTextProps> = ({
     };
     updateLoop();
 
+    const currentCanvasContainer = canvasContainerRef.current;
     return () => {
       Render.stop(render);
       Runner.stop(runner);
       cancelAnimationFrame(animationId);
-      if (render.canvas && canvasContainerRef.current) {
-        canvasContainerRef.current.removeChild(render.canvas);
+      if (render.canvas && currentCanvasContainer) {
+        currentCanvasContainer.removeChild(render.canvas);
       }
       World.clear(engine.world, false);
       Engine.clear(engine);

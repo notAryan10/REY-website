@@ -24,11 +24,12 @@ export async function GET() {
       service: "rey-network-core"
     }, { status: 200 });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Health Check Failure:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ 
       status: "unhealthy", 
-      error: error.message 
+      error: errorMessage 
     }, { status: 500 });
   }
 }

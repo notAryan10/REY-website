@@ -33,9 +33,8 @@ export const Section = ({
           <div className="mb-12 md:mb-16 space-y-4">
             {subtitle && (
               <span className={`font-pixel text-[10px] uppercase tracking-widest ${accentColors[accent]}`}>
-                // {subtitle}
-              </span>
-            )}
+                {"// "} {subtitle}
+              </span>            )}
             {title && (
               <h2 className="text-2xl md:text-3xl text-white">
                 {title}

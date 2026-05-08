@@ -55,8 +55,9 @@ export async function POST(req: Request) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
-    console.error("DEBUG: Registration failed:", error.message || error);
-    return NextResponse.json({ error: "Enlistment failed", details: error.message }, { status: 500 });
+  } catch (error) {
+    console.error("DEBUG: Registration failed:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: "Enlistment failed", details: errorMessage }, { status: 500 });
   }
 }

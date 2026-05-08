@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { createServer } = require("http");
 const { parse } = require("url");
 const { Server } = require("socket.io");
@@ -194,7 +195,7 @@ app.prepare().then(() => {
       }
     });
 
-    socket.on("achievement:progress", async ({ userId, requirementType, amount = 1 }) => {
+    socket.on("achievement:progress", async ({ userId: _userId, requirementType: _requirementType, amount: _amount = 1 }) => {
       // ... existing code
     });
 

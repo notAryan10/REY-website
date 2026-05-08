@@ -38,7 +38,7 @@ export async function GET(
 }
 
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -47,7 +47,7 @@ export async function DELETE(
 
     try {
       requireRole(session, ["architect"]);
-    } catch (err) {
+    } catch {
       return NextResponse.json({ error: "Forbidden: Architect Clearance Required" }, { status: 403 });
     }
 
@@ -78,7 +78,7 @@ export async function PATCH(
 
     try {
       requireRole(session, ["architect"]);
-    } catch (err) {
+    } catch {
       return NextResponse.json({ error: "Forbidden: Architect Clearance Required" }, { status: 403 });
     }
 
@@ -86,7 +86,7 @@ export async function PATCH(
     const body = await req.json();
     
     // Construct update object with only provided fields
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (body.title !== undefined) updateData.title = body.title;
     if (body.description !== undefined) updateData.description = body.description;
     if (body.date !== undefined) {
@@ -121,8 +121,9 @@ export async function PATCH(
     }
 
     return NextResponse.json(updatedEvent);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error updating event:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

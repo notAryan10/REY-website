@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
 import { Gamepad2, Trophy, ArrowRight, Code } from "lucide-react";
 import { Section } from "@/components/layout/Section";
 import { Card } from "@/components/ui/Card";
@@ -11,19 +10,20 @@ import { ScrollReveal } from "@/components/layout/ScrollReveal";
 
 import { EventManagementModal } from "@/components/events/EventManagementModal";
 import { useSession } from "next-auth/react";
+import { IEvent } from "@/types";
 
 export default function GameJamsPage() {
   const { data: session } = useSession();
-  const [jams, setJams] = React.useState<any[]>([]);
+  const [jams, setJams] = React.useState<IEvent[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [managingJam, setManagingJam] = React.useState<any>(null);
+  const [managingJam, setManagingJam] = React.useState<IEvent | null>(null);
 
   const fetchJams = async () => {
     try {
       const res = await fetch("/api/events");
       if (res.ok) {
         const data = await res.json();
-        setJams(data.filter((e: any) => e.type === "gamejam"));
+        setJams(data.filter((e: IEvent) => e.type === "gamejam"));
       }
     } catch (err) {
       console.error("Failed to fetch game jams:", err);
@@ -36,7 +36,7 @@ export default function GameJamsPage() {
     fetchJams();
   }, []);
 
-  const handleAction = (jam: any) => {
+  const handleAction = (jam: IEvent) => {
     if (session?.user?.role === "architect") {
       setManagingJam(jam);
     } else {
@@ -45,7 +45,7 @@ export default function GameJamsPage() {
     }
   };
 
-  const handleUpdate = (updated: any) => {
+  const handleUpdate = (updated: IEvent) => {
     setJams(jams.map(j => j._id === updated._id ? updated : j));
   };
 

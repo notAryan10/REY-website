@@ -1,15 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Event from "@/models/Event";
 import { getUserFromSession, requireRole } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     await dbConnect();
     const session = await getUserFromSession();
     const userRole = session?.user?.role || "spectator";
 
-    let query: any = {};
+    const query: { isPublic?: boolean; type?: string | { $ne: string } } = {};
 
     // If spectator, only show public events and filter out workshops (which are always private)
     if (userRole === "spectator") {
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     try {
       requireRole(session, ["architect"]);
-    } catch (err) {
+    } catch {
       return NextResponse.json({ error: "Forbidden: Architect Clearance Required" }, { status: 403 });
     }
 

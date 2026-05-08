@@ -4,7 +4,6 @@ import { NextResponse } from "next/server";
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
-    const isAuth = !!token;
     const pathname = req.nextUrl.pathname;
 
     // Allow spectators to see the main dashboard, but keep them away from specific pages

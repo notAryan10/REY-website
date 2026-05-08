@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Lock, CheckCircle, Search, EyeOff, Zap, Filter } from "lucide-react";
+import { Trophy, Lock, CheckCircle, Search, Zap } from "lucide-react";
 import { Section } from "@/components/layout/Section";
-import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 import * as LucideIcons from "lucide-react";
+import { Achievement } from "@/types";
 
 // Map rarity to project theme colors
 const RARITY_MAP: Record<string, "grass" | "lava" | "sky" | "sand" | "stone"> = {
@@ -20,11 +20,11 @@ const RARITY_MAP: Record<string, "grass" | "lava" | "sky" | "sand" | "stone"> = 
   mythic: "grass",
 };
 
-const AchievementCard = ({ achievement }: { achievement: any }) => {
+const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
   const accent = achievement.unlocked ? RARITY_MAP[achievement.rarity] || "stone" : "stone";
-  const IconComponent = (LucideIcons as any)[achievement.icon] || Trophy;
+  const IconComponent = (LucideIcons as unknown as Record<string, React.ElementType>)[achievement.icon] || Trophy;
   
-  const progressPercent = Math.min((achievement.progress / achievement.requirementValue) * 100, 100);
+  const progressPercent = Math.min(((achievement.progress || 0) / achievement.requirementValue) * 100, 100);
 
   return (
     <Card 
@@ -103,7 +103,7 @@ const AchievementCard = ({ achievement }: { achievement: any }) => {
 };
 
 export default function AchievementsPage() {
-  const [achievements, setAchievements] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");

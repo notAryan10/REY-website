@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { socket } from "@/lib/socket";
+import { User } from "@/types";
+
+export type LeaderboardEntry = Pick<User, "_id" | "name" | "role" | "xp">;
 
 export function useLeaderboard() {
-  const [leaders, setLeaders] = useState<any[]>([]);
+  const [leaders, setLeaders] = useState<LeaderboardEntry[]>([]);
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
@@ -12,7 +15,7 @@ export function useLeaderboard() {
 
     const onConnect = () => setConnected(true);
     const onDisconnect = () => setConnected(false);
-    const onUpdate = (data: any[]) => setLeaders(data);
+    const onUpdate = (data: LeaderboardEntry[]) => setLeaders(data);
 
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);

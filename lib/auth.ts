@@ -1,4 +1,5 @@
-import { NextAuthOptions } from "next-auth";
+import { NextAuthOptions, Session, User as NextAuthUser } from "next-auth";
+import { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import DiscordProvider from "next-auth/providers/discord";
@@ -13,13 +14,13 @@ import AdminPermission from "@/models/AdminPermission";
 
 const FOUNDER_EMAIL = "aryanverma1857@gmail.com";
 
-export function requireRole(session: any, allowedRoles: string[]) {
+export function requireRole(session: Session | null, allowedRoles: string[]) {
   if (!session || !session.user || !allowedRoles.includes(session.user.role)) {
     throw new Error("Unauthorized: Insufficient clearance level.");
   }
 }
 
-export function hasPermission(session: any, permission: string) {
+export function hasPermission(session: Session | null, permission: string) {
   if (!session || !session.user) return false;
   if (session.user.role === "Founder") return true;
   return session.user.permissions?.includes(permission) || session.user.permissions?.includes("FULL_ACCESS");
@@ -141,11 +142,11 @@ export const authOptions: NextAuthOptions = {
 
       return true;
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
+        token.role = (user as NextAuthUser).role;
         token.id = user.id;
-        token.xp = (user as any).xp;
+        token.xp = (user as NextAuthUser).xp;
       }
 
       // If it's an OAuth sign in or session update, fetch from DB
@@ -165,7 +166,7 @@ export const authOptions: NextAuthOptions = {
       
       return token;
     },
-    async session({ session, token }: { session: any; token: any }) {
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
         session.user.role = token.role;
         session.user.id = token.id;

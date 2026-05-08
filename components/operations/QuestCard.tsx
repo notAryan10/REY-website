@@ -10,7 +10,6 @@ import {
   Target, 
   Layout, 
   Users, 
-  Lock,
   Terminal,
   Loader2
 } from "lucide-react";
@@ -19,9 +18,10 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { socket } from "@/lib/socket";
 import { useSession } from "next-auth/react";
+import { IUserQuest } from "@/types";
 
 interface QuestCardProps {
-  userQuest: any;
+  userQuest: IUserQuest;
   onComplete: () => void;
 }
 
@@ -54,8 +54,8 @@ export function QuestCard({ userQuest, onComplete }: QuestCardProps) {
         
         onComplete();
       }
-    } catch (err) {
-      console.error("Failed to complete quest:", err);
+    } catch {
+      console.error("Failed to complete quest:");
     } finally {
       setSubmitting(false);
     }

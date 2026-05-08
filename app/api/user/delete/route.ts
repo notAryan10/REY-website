@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 import { getUserFromSession } from "@/lib/auth";
 
-export async function DELETE(req: NextRequest) {
+export async function DELETE() {
   try {
     const session = await getUserFromSession();
     

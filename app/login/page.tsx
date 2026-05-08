@@ -55,7 +55,7 @@ function LoginForm() {
       } else {
         router.push(callbackUrl);
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred.");
       setIsLoading(false);
     }
@@ -172,8 +172,7 @@ function LoginForm() {
       </Button>
 
       <div className="mt-8 pt-8 border-t border-border/50 text-center space-y-6">
-        <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary">// Alternative Channels</p>
-        <div className="flex flex-col gap-3">
+        <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary">{"// "} Alternative Channels</p>        <div className="flex flex-col gap-3">
           <div className="flex gap-3">
             <Button 
               variant="secondary" 

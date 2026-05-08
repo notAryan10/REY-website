@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { socket } from "@/lib/socket";
-import { Trophy, Zap, Star } from "lucide-react";
+import { Trophy, Zap } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { Achievement } from "@/types";
 
 // Map rarity to project theme colors
 const RARITY_MAP: Record<string, "grass" | "lava" | "sky" | "sand" | "stone"> = {
@@ -25,12 +26,12 @@ const THEME_COLORS = {
 };
 
 export const AchievementPopup = () => {
-  const [notification, setNotification] = useState<any>(null);
+  const [notification, setNotification] = useState<Achievement | null>(null);
 
   useEffect(() => {
     socket.connect();
 
-    socket.on("achievement:unlocked_success", (data) => {
+    socket.on("achievement:unlocked_success", (data: Achievement) => {
       setNotification(data);
       
       // Auto-hide after 6 seconds
@@ -48,7 +49,7 @@ export const AchievementPopup = () => {
 
   const accent = RARITY_MAP[notification.rarity] || "stone";
   const color = THEME_COLORS[accent];
-  const IconComponent = (LucideIcons as any)[notification.icon] || Trophy;
+  const IconComponent = (LucideIcons as unknown as Record<string, React.ElementType>)[notification.icon] || Trophy;
 
   return (
     <AnimatePresence>

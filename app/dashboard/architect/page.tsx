@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Shield, 
@@ -22,18 +22,19 @@ import {
   Lock,
   Cpu,
   Globe,
-  Database,
-  UserPlus,
-  UserMinus,
   RefreshCw,
-  MoreVertical,
-  ChevronRight
+  ChevronRight,
+  UserPlus,
+  UserMinus
 } from "lucide-react";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { calculateLevel } from "@/lib/xp";
+import { User, Achievement, Log, UserAchievement } from "@/types";
+import { Session } from "next-auth";
 
 import { socket } from "@/lib/socket";
 
@@ -42,16 +43,37 @@ type Section = "Overview" | "Members" | "XP Control" | "Achievements" | "Admin M
 export default function ArchitectConsole() {
   const { data: session } = useSession();
   const [activeSection, setActiveSection] = useState<Section>("Overview");
-  const [users, setUsers] = useState<any[]>([]);
-  const [achievements, setAchievements] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<User[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [onlineAdmins, setOnlineAdmins] = useState<number>(1);
   const [systemLoad, setSystemLoad] = useState(42);
 
+  const fetchData = useCallback(async () => {
+    try {
+      const [usersRes, achRes] = await Promise.all([
+        fetch("/api/admin/users"),
+        fetch("/api/admin/achievements")
+      ]);
+      
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        setUsers(usersData);
+      }
+      if (achRes.ok) {
+        const achData = await achRes.json();
+        setAchievements(achData);
+      }
+    } catch (_err) {
+      console.error("Failed to fetch data", _err);
+    }
+  }, []);
+
   useEffect(() => {
-    fetchData();
+    const init = async () => {
+      await fetchData();
+    };
+    init();
     
     // Socket integration
     socket.connect();
@@ -64,24 +86,7 @@ export default function ArchitectConsole() {
       socket.disconnect();
       clearInterval(loadInterval);
     };
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [usersRes, achRes] = await Promise.all([
-        fetch("/api/admin/users"),
-        fetch("/api/admin/achievements")
-      ]);
-      
-      if (usersRes.ok) setUsers(await usersRes.json());
-      if (achRes.ok) setAchievements(await achRes.json());
-    } catch (err) {
-      console.error("Failed to fetch data", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchData]);
 
   const showStatus = (type: "success" | "error", message: string) => {
     setStatus({ type, message });
@@ -181,7 +186,7 @@ export default function ArchitectConsole() {
             <div className="flex items-center gap-3 p-3 rounded-lg border border-white/10">
               <div className="w-10 h-10 rounded-md bg-stone flex items-center justify-center overflow-hidden border border-white/20">
                 {session.user.image ? (
-                  <img src={session.user.image} alt="" className="w-full h-full object-cover" />
+                  <Image src={session.user.image || ""} alt="" width={40} height={40} className="w-full h-full object-cover" unoptimized />
                 ) : (
                   <Shield size={20} className={session.user.role === "Founder" ? "text-architect-gold" : "text-architect-orange"} />
                 )}
@@ -277,7 +282,8 @@ export default function ArchitectConsole() {
                     showStatus={showStatus}
                     session={session}
                   />
-                )}                {activeSection === "System Logs" && (
+                )}
+                {activeSection === "System Logs" && (
                   <SystemLogsSection />
                 )}
               </motion.div>
@@ -330,7 +336,7 @@ function NavItem({ active, onClick, icon, label }: { active: boolean, onClick: (
   );
 }
 
-function OverviewSection({ users, achievements }: { users: any[], achievements: any[] }) {
+function OverviewSection({ users, achievements }: { users: User[], achievements: Achievement[] }) {
   const totalXP = users.reduce((acc, u) => acc + (u.xp || 0), 0);
   const activeAdmins = users.filter(u => ["Founder", "Core Architect", "Moderator"].includes(u.role)).length;
 
@@ -413,7 +419,7 @@ function OverviewSection({ users, achievements }: { users: any[], achievements: 
   );
 }
 
-function StatCard({ title, value, icon, accent, trend }: { title: string, value: any, icon: React.ReactNode, accent: string, trend: string }) {
+function StatCard({ title, value, icon, accent, trend }: { title: string, value: string | number, icon: React.ReactNode, accent: string, trend: string }) {
   const accentColors = {
     sky: "text-architect-blue bg-architect-blue/10 border-architect-blue/20",
     orange: "text-architect-orange bg-architect-orange/10 border-architect-orange/20",
@@ -461,8 +467,15 @@ function HealthItem({ label, status, progress, color }: { label: string, status:
   );
 }
 
-function MembersSection({ users, searchTerm, setSearchTerm, fetchData, showStatus, session }: any) {
-  const filteredUsers = users.filter((u: any) => 
+function MembersSection({ users, searchTerm, setSearchTerm, fetchData, showStatus, session }: { 
+  users: User[], 
+  searchTerm: string, 
+  setSearchTerm: (val: string) => void, 
+  fetchData: () => void, 
+  showStatus: (type: "success" | "error", message: string) => void, 
+  session: Session | null 
+}) {
+  const filteredUsers = users.filter((u: User) => 
     u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -482,9 +495,9 @@ function MembersSection({ users, searchTerm, setSearchTerm, fetchData, showStatu
           action: status === "active" ? "MEMBER_REACTIVATION" : "MEMBER_SUSPENSION",
           subject: userId,
           subjectName: userName,
-          actor: session.user.id,
-          actorName: session.user.name,
-          actorRole: session.user.role,
+          actor: session?.user?.id,
+          actorName: session?.user?.name,
+          actorRole: session?.user?.role,
           status: "SUCCESS"
         });
 
@@ -492,7 +505,7 @@ function MembersSection({ users, searchTerm, setSearchTerm, fetchData, showStatu
       } else {
         showStatus("error", "Failed to update user status");
       }
-    } catch (err) {
+    } catch {
       showStatus("error", "Network error");
     }
   };
@@ -515,9 +528,9 @@ function MembersSection({ users, searchTerm, setSearchTerm, fetchData, showStatu
           action: "IDENTITY_PURGE",
           subject: userId,
           subjectName: userName,
-          actor: session.user.id,
-          actorName: session.user.name,
-          actorRole: session.user.role,
+          actor: session?.user?.id,
+          actorName: session?.user?.name,
+          actorRole: session?.user?.role,
           status: "PURGED"
         });
 
@@ -525,9 +538,8 @@ function MembersSection({ users, searchTerm, setSearchTerm, fetchData, showStatu
       } else {
         showStatus("error", data.error || `Purge failed with status: ${res.status}`);
       }
-    } catch (err: any) {
-      console.error("Purge Protocol Error:", err);
-      showStatus("error", `Protocol Breach: ${err.message || "Network Error"}`);
+    } catch {
+      showStatus("error", "Protocol Breach: Network Error");
     }
   };
 
@@ -553,7 +565,7 @@ function MembersSection({ users, searchTerm, setSearchTerm, fetchData, showStatu
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredUsers.map((user: any) => (
+        {filteredUsers.map((user: User) => (
           <UserCard 
             key={user._id} 
             user={user} 
@@ -566,7 +578,7 @@ function MembersSection({ users, searchTerm, setSearchTerm, fetchData, showStatu
   );
 }
 
-function UserCard({ user, onStatusChange, onDelete }: { user: any, onStatusChange: (id: string, status: string, name: string) => void, onDelete: (id: string, name: string) => void }) {
+function UserCard({ user, onStatusChange, onDelete }: { user: User, onStatusChange: (id: string, status: string, name: string) => void, onDelete: (id: string, name: string) => void }) {
   const { level, progress } = calculateLevel(user.xp || 0);
 
   return (
@@ -575,7 +587,7 @@ function UserCard({ user, onStatusChange, onDelete }: { user: any, onStatusChang
         <div className="flex gap-4">
           <div className="w-12 h-12 rounded-lg bg-stone flex items-center justify-center overflow-hidden border border-white/20">
             {user.image ? (
-              <img src={user.image} alt="" className="w-full h-full object-cover" />
+              <Image src={user.image || ""} alt={user.name || ""} width={40} height={40} className="w-full h-full object-cover" unoptimized />
             ) : (
               <Users size={24} className="text-white/20" />
             )}
@@ -641,8 +653,8 @@ function UserCard({ user, onStatusChange, onDelete }: { user: any, onStatusChang
   );
 }
 
-function XPControlSection({ users, fetchData, showStatus, session }: any) {
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+function XPControlSection({ users, fetchData, showStatus, session }: { users: User[], fetchData: () => void, showStatus: (type: "success" | "error", message: string) => void, session: Session | null }) {
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [xpAmount, setXpAmount] = useState(100);
 
   const handleXPUpdate = async (action: "add" | "remove" | "set") => {
@@ -667,9 +679,9 @@ function XPControlSection({ users, fetchData, showStatus, session }: any) {
           action: `XP_${action.toUpperCase()}`,
           subject: selectedUser._id,
           subjectName: selectedUser.name,
-          actor: session.user.id,
-          actorName: session.user.name,
-          actorRole: session.user.role,
+          actor: session?.user?.id,
+          actorName: session?.user?.name,
+          actorRole: session?.user?.role,
           status: "SUCCESS",
           details: { amount: xpAmount }
         });
@@ -679,11 +691,11 @@ function XPControlSection({ users, fetchData, showStatus, session }: any) {
         setSelectedUser({
           ...selectedUser,
           xp: action === "set" ? xpAmount : (selectedUser.xp || 0) + (action === "remove" ? -xpAmount : xpAmount)
-        });
+        } as User);
       } else {
         showStatus("error", "Failed to update XP");
       }
-    } catch (err) {
+    } catch {
       showStatus("error", "Network error");
     }
   };
@@ -696,7 +708,7 @@ function XPControlSection({ users, fetchData, showStatus, session }: any) {
           Select Target Subject
         </h3>
         <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-          {users.map((user: any) => (
+          {users.map((user: User) => (
             <button
               key={user._id}
               onClick={() => setSelectedUser(user)}
@@ -708,7 +720,7 @@ function XPControlSection({ users, fetchData, showStatus, session }: any) {
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded bg-stone border border-white/10 flex items-center justify-center overflow-hidden">
-                  {user.image ? <img src={user.image} className="w-full h-full object-cover" /> : <Users size={14} />}
+                  {user.image ? <Image src={user.image || ""} alt={user.name || ""} width={40} height={40} className="w-full h-full object-cover" unoptimized /> : <Users size={14} />}
                 </div>
                 <div className="text-left">
                   <p className="text-xs font-bold">{user.name}</p>
@@ -792,8 +804,8 @@ function XPControlSection({ users, fetchData, showStatus, session }: any) {
   );
 }
 
-function AchievementsSection({ users, achievements, fetchData, showStatus, session }: any) {
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+function AchievementsSection({ users, achievements, fetchData, showStatus, session }: { users: User[], achievements: Achievement[], fetchData: () => void, showStatus: (type: "success" | "error", message: string) => void, session: Session | null }) {
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const handleUnlock = async (achievementId: string, achievementTitle: string) => {
     if (!selectedUser) return;
@@ -813,23 +825,25 @@ function AchievementsSection({ users, achievements, fetchData, showStatus, sessi
           action: "ACHIEVEMENT_UNLOCKED",
           subject: selectedUser._id,
           subjectName: selectedUser.name,
-          actor: session.user.id,
-          actorName: session.user.name,
-          actorRole: session.user.role,
+          actor: session?.user?.id,
+          actorName: session?.user?.name,
+          actorRole: session?.user?.role,
           status: "SUCCESS",
           details: { achievement: achievementTitle }
         });
 
         fetchData();
         // Update local user state
-        const updatedUser = { ...selectedUser };
-        updatedUser.achievements = [...(updatedUser.achievements || []), { achievementId, unlocked: true }];
+        const updatedUser = { 
+          ...selectedUser,
+          achievements: [...(selectedUser.achievements || []), { achievementId, unlocked: true }]
+        } as User;
         setSelectedUser(updatedUser);
       } else {
         const error = await res.json();
         showStatus("error", error.error || "Failed to unlock achievement");
       }
-    } catch (err) {
+    } catch {
       showStatus("error", "Network error");
     }
   };
@@ -842,7 +856,7 @@ function AchievementsSection({ users, achievements, fetchData, showStatus, sessi
           Target Identity
         </h3>
         <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-          {users.map((user: any) => (
+          {users.map((user: User) => (
             <button
               key={user._id}
               onClick={() => setSelectedUser(user)}
@@ -854,7 +868,7 @@ function AchievementsSection({ users, achievements, fetchData, showStatus, sessi
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded bg-stone border border-white/10 flex items-center justify-center overflow-hidden">
-                  {user.image ? <img src={user.image} className="w-full h-full object-cover" /> : <Users size={14} />}
+                  {user.image ? <Image src={user.image || ""} alt={user.name || ""} width={40} height={40} className="w-full h-full object-cover" unoptimized /> : <Users size={14} />}
                 </div>
                 <div className="text-left">
                   <p className="text-xs font-bold">{user.name}</p>
@@ -862,7 +876,7 @@ function AchievementsSection({ users, achievements, fetchData, showStatus, sessi
                 </div>
               </div>
               <div className="flex gap-1">
-                <Trophy size={14} className={user.achievements?.length > 0 ? "text-architect-gold" : "text-white/10"} />
+                <Trophy size={14} className={(user.achievements?.length || 0) > 0 ? "text-architect-gold" : "text-white/10"} />
                 <span className="text-[10px] font-pixel">{user.achievements?.length || 0}</span>
               </div>
             </button>
@@ -889,8 +903,11 @@ function AchievementsSection({ users, achievements, fetchData, showStatus, sessi
             </div>
 
             <div className="grid grid-cols-1 gap-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
-              {achievements.map((ach: any) => {
-                const isUnlocked = selectedUser.achievements?.find((a: any) => a.achievementId === ach._id || (a.achievementId?._id === ach._id));
+              {achievements.map((ach: Achievement) => {
+                const userAchievements = selectedUser.achievements || [];
+                const isUnlocked = userAchievements.find((a: UserAchievement) => 
+                  (typeof a.achievementId === 'string' ? a.achievementId === ach._id : (a.achievementId as unknown as Achievement)?._id === ach._id)
+                );
                 return (
                   <div 
                     key={ach._id}
@@ -938,12 +955,12 @@ function AchievementsSection({ users, achievements, fetchData, showStatus, sessi
   );
 }
 
-function AdminManagementSection({ users, fetchData, showStatus, session }: any) {
+function AdminManagementSection({ users, fetchData, showStatus, session }: { users: User[], fetchData: () => void, showStatus: (type: "success" | "error", message: string) => void, session: Session | null }) {
   const [targetEmail, setTargetEmail] = useState("");
   const [selectedTier, setSelectedTier] = useState<"Core Architect" | "Moderator">("Moderator");
   const [submitting, setSubmitting] = useState(false);
 
-  const adminUsers = users.filter((u: any) => ["Founder", "Core Architect", "Moderator"].includes(u.role));
+  const adminUsers = users.filter((u: User) => ["Founder", "Core Architect", "Moderator"].includes(u.role));
 
   const handleGrant = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -968,9 +985,9 @@ function AdminManagementSection({ users, fetchData, showStatus, session }: any) 
           action: "AUTH_UPGRADE",
           subject: data.user?._id || targetEmail,
           subjectName: targetEmail,
-          actor: session.user.id,
-          actorName: session.user.name,
-          actorRole: session.user.role,
+          actor: session?.user?.id,
+          actorName: session?.user?.name,
+          actorRole: session?.user?.role,
           status: "SUCCESS",
           details: { tier: selectedTier }
         });
@@ -981,7 +998,7 @@ function AdminManagementSection({ users, fetchData, showStatus, session }: any) 
         const err = await res.json();
         showStatus("error", err.error || "Failed to grant privileges");
       }
-    } catch (err) {
+    } catch {
       showStatus("error", "Network error");
     } finally {
       setSubmitting(false);
@@ -1013,7 +1030,7 @@ function AdminManagementSection({ users, fetchData, showStatus, session }: any) 
             <label className="text-[10px] font-pixel text-text-secondary uppercase">Authorization Tier</label>
             <select 
               value={selectedTier}
-              onChange={(e: any) => setSelectedTier(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedTier(e.target.value as "Core Architect" | "Moderator")}
               className="w-full bg-black/40 border-2 border-white/10 rounded-lg px-4 py-3 text-xs font-pixel text-white outline-none focus:border-architect-gold appearance-none"
             >
               <option value="Core Architect">Core Architect (Elite Management)</option>
@@ -1041,14 +1058,14 @@ function AdminManagementSection({ users, fetchData, showStatus, session }: any) 
         </h3>
 
         <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-          {adminUsers.map((admin: any) => (
+          {adminUsers.map((admin: User) => (
             <div 
               key={admin._id}
               className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-lg group"
             >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-md bg-stone border border-white/20 flex items-center justify-center overflow-hidden">
-                   {admin.image ? <img src={admin.image} className="w-full h-full object-cover" /> : <Shield size={20} />}
+                   {admin.image ? <Image src={admin.image || ""} alt={admin.name || ""} width={40} height={40} className="w-full h-full object-cover" unoptimized /> : <Shield size={20} />}
                 </div>
                 <div>
                   <p className="text-xs font-bold">{admin.name}</p>
@@ -1070,34 +1087,38 @@ function AdminManagementSection({ users, fetchData, showStatus, session }: any) 
 }
 
 function SystemLogsSection() {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchLogs = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/logs");
+      if (res.ok) {
+        const logsData = await res.json();
+        setLogs(logsData);
+      }
+    } catch (_err) {
+      console.error("Failed to fetch logs", _err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    fetchLogs();
+    const init = async () => {
+      await fetchLogs();
+    };
+    init();
 
     // Listen for live updates
-    socket.on("admin:log_update", (newLog: any) => {
+    socket.on("admin:log_update", (newLog: Log) => {
       setLogs(prev => [newLog, ...prev].slice(0, 50));
     });
 
     return () => {
       socket.off("admin:log_update");
     };
-  }, []);
-
-  const fetchLogs = async () => {
-    try {
-      const res = await fetch("/api/admin/logs");
-      if (res.ok) {
-        setLogs(await res.json());
-      }
-    } catch (err) {
-      console.error("Failed to fetch logs", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchLogs]);
 
   return (
     <Card className="bg-black/40 font-mono" hoverEffect={false}>
