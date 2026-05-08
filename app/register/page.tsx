@@ -1,16 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
-import { Lock, Mail, User, Loader2, Rocket, Shield, Zap, Eye } from "lucide-react";
-import { useRouter } from "next/navigation";
+import React, { useState, Suspense } from "react";
+import { Lock, Mail, User, Loader2, Rocket, Shield, Zap, Eye, Globe } from "lucide-react";
+import { signIn } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Section } from "@/components/layout/Section";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -38,7 +41,7 @@ export default function RegisterPage() {
         setError(data.error || "Something went wrong.");
         setIsLoading(false);
       } else {
-        router.push("/login?success=Account+created.+Please+sign+in.");
+        router.push(`/login?success=Account+created.+Please+sign+in.&callbackUrl=${encodeURIComponent(callbackUrl)}`);
       }
     } catch (err) {
       setError("An unexpected error occurred.");
@@ -52,134 +55,194 @@ export default function RegisterPage() {
     { id: "architect", title: "Architect", icon: Shield, accent: "lava" as const, desc: "Elite rank." },
   ];
 
+  const handleOAuthSignIn = (provider: string) => {
+    // If they picked a role that needs an access code, we check it here for OAuth too
+    if (role === "respawner" && accessCode !== "REY-RESPAWN-2026") {
+      setError("Invalid Access Code for Respawner rank");
+      return;
+    }
+    if (role === "architect" && accessCode !== "REY-ARCHITECT-2026") {
+      setError("Invalid Access Code for Core Architect rank");
+      return;
+    }
+
+    // Store the desired role in a cookie so lib/auth.ts can read it during creation
+    document.cookie = `pending_role=${role}; path=/; max-age=300; SameSite=Lax`;
+    
+    signIn(provider, { callbackUrl });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-8">
+      {error && (
+        <div className="bg-lava/10 border border-lava/20 p-4 text-[10px] uppercase font-pixel tracking-tighter text-lava animate-shake">
+          {error}
+        </div>
+      )}
+
+      {/* ROLE SELECTION */}
+      <div className="space-y-4">
+        <label className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary">Select Your Rank</label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {roles.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => setRole(r.id)}
+              className={`relative p-4 border-2 transition-all duration-300 text-left group
+                ${role === r.id ? `border-${r.accent} bg-${r.accent}/5` : 'border-border/50 bg-stone/5 hover:border-border'}
+              `}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <r.icon size={20} className={role === r.id ? `text-${r.accent}` : "text-text-secondary"} />
+                {role === r.id && <div className={`w-2 h-2 rounded-full bg-${r.accent} animate-pulse`} />}
+              </div>
+              <p className={`text-xs uppercase font-pixel tracking-wider ${role === r.id ? 'text-white' : 'text-text-secondary'}`}>{r.title}</p>
+              <p className="text-[10px] text-text-secondary pt-1 leading-tight">{r.desc}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary">Architect Name</label>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+            <input 
+              type="text" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="Steve" 
+              className="w-full bg-stone/20 border-2 border-border p-3 pl-10 text-xs text-white focus:border-sky outline-none placeholder:text-stone/40"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary">Email Address</label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+            <input 
+              type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="architect@rey.net" 
+              className="w-full bg-stone/20 border-2 border-border p-3 pl-10 text-xs text-white focus:border-sky outline-none placeholder:text-stone/40"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary">Secret Password</label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+            <input 
+              type="password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="••••••••" 
+              className="w-full bg-stone/20 border-2 border-border p-3 pl-10 text-xs text-white focus:border-sky outline-none placeholder:text-stone/40"
+            />
+          </div>
+        </div>
+
+        {role !== "spectator" && (
+          <div className="space-y-2">
+            <label className="text-[10px] uppercase font-pixel tracking-widest text-lava animate-pulse flex items-center gap-2">
+              Access Code Required
+            </label>
+            <div className="relative">
+              <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-lava/60" />
+              <input 
+                type="text" 
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value)}
+                required
+                placeholder="XXX-XXXX-XXXX" 
+                className="w-full bg-lava/5 border-2 border-lava/30 p-3 pl-10 text-xs text-white focus:border-lava outline-none placeholder:text-lava/20"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between">
+        <Link href="/login" className="text-[10px] uppercase font-pixel tracking-widest text-stone hover:text-white transition-colors underline">Already identified?</Link>
+      </div>
+
+      <Button variant={role === "architect" ? "lava" : role === "respawner" ? "sky" : "secondary"} type="submit" disabled={isLoading} className="w-full py-6 text-xl transition-all duration-300">
+        {isLoading ? (
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-5 h-5 animate-spin" /> Finalizing...
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            Enlist as {role} <Rocket size={18} />
+          </div>
+        )}
+      </Button>
+
+      <div className="mt-8 pt-8 border-t border-border/50 text-center space-y-6">
+        <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary leading-loose">
+          By enlisting as an <span className="text-white uppercase">{role}</span>, you agree to our <br />
+          <span className="text-white">Collective Governance Charter</span>.
+        </p>
+
+        <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary pt-4 border-t border-border/20">// Alternative Channels</p>
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-3">
+            <Button 
+              variant="secondary" 
+              type="button"
+              className="flex-1 text-[10px] group"
+              onClick={() => handleOAuthSignIn("discord")}
+            >
+              <Globe size={16} className="mr-2 group-hover:text-white transition-colors" /> Discord
+            </Button>
+            <Button 
+              variant="secondary" 
+              type="button"
+              className="flex-1 text-[10px] group"
+              onClick={() => handleOAuthSignIn("google")}
+            >
+              <Shield size={16} className="mr-2 group-hover:text-white transition-colors" /> Google
+            </Button>
+          </div>
+          <Button 
+            variant="secondary" 
+            type="button"
+            className="w-full text-[10px] group"
+            onClick={() => handleOAuthSignIn("github")}
+          >
+            <Lock size={16} className="mr-2 group-hover:text-white transition-colors" /> GitHub
+          </Button>
+        </div>
+      </div>
+    </form>
+  );
+}
+
+export default function RegisterPage() {
   return (
     <div className="flex flex-col min-h-screen font-sans">
       <main className="flex-1 flex flex-col items-center justify-center p-6 pt-32 pb-24">
         <div className="w-full max-w-2xl">
           <Section title="Enlist" subtitle="rank selection mandatory" accent="sky" className="!py-0">
              <Card accent="sky" className="relative p-12 bg-card/80 backdrop-blur-md">
-                <form onSubmit={handleSubmit} className="space-y-8">
-                   {error && (
-                     <div className="bg-lava/10 border border-lava/20 p-4 text-[10px] uppercase font-pixel tracking-tighter text-lava animate-shake">
-                       {error}
-                     </div>
-                   )}
-
-                   {/* ROLE SELECTION */}
-                   <div className="space-y-4">
-                      <label className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary">Select Your Rank</label>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                         {roles.map((r) => (
-                           <button
-                             key={r.id}
-                             type="button"
-                             onClick={() => setRole(r.id)}
-                             className={`relative p-4 border-2 transition-all duration-300 text-left group
-                               ${role === r.id ? `border-${r.accent} bg-${r.accent}/5` : 'border-border/50 bg-stone/5 hover:border-border'}
-                             `}
-                           >
-                              <div className="flex items-center justify-between mb-2">
-                                 <r.icon size={20} className={role === r.id ? `text-${r.accent}` : "text-text-secondary"} />
-                                 {role === r.id && <div className={`w-2 h-2 rounded-full bg-${r.accent} animate-pulse`} />}
-                              </div>
-                              <p className={`text-xs uppercase font-pixel tracking-wider ${role === r.id ? 'text-white' : 'text-text-secondary'}`}>{r.title}</p>
-                              <p className="text-[10px] text-text-secondary pt-1 leading-tight">{r.desc}</p>
-                           </button>
-                         ))}
-                      </div>
-                   </div>
-                   
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                         <label className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary">Architect Name</label>
-                         <div className="relative">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-                            <input 
-                              type="text" 
-                              value={name}
-                              onChange={(e) => setName(e.target.value)}
-                              required
-                              placeholder="Steve" 
-                              className="w-full bg-stone/20 border-2 border-border p-3 pl-10 text-xs text-white focus:border-sky outline-none placeholder:text-stone/40"
-                            />
-                         </div>
-                      </div>
-
-                      <div className="space-y-2">
-                         <label className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary">Email Address</label>
-                         <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-                            <input 
-                              type="email" 
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                              required
-                              placeholder="architect@rey.net" 
-                              className="w-full bg-stone/20 border-2 border-border p-3 pl-10 text-xs text-white focus:border-sky outline-none placeholder:text-stone/40"
-                            />
-                         </div>
-                      </div>
-                   </div>
-
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                         <label className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary">Secret Password</label>
-                         <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-                            <input 
-                              type="password" 
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
-                              required
-                              placeholder="••••••••" 
-                              className="w-full bg-stone/20 border-2 border-border p-3 pl-10 text-xs text-white focus:border-sky outline-none placeholder:text-stone/40"
-                            />
-                         </div>
-                      </div>
-
-                      {role !== "spectator" && (
-                        <div className="space-y-2">
-                           <label className="text-[10px] uppercase font-pixel tracking-widest text-lava animate-pulse flex items-center gap-2">
-                              Access Code Required
-                           </label>
-                           <div className="relative">
-                              <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-lava/60" />
-                              <input 
-                                type="text" 
-                                value={accessCode}
-                                onChange={(e) => setAccessCode(e.target.value)}
-                                required
-                                placeholder="XXX-XXXX-XXXX" 
-                                className="w-full bg-lava/5 border-2 border-lava/30 p-3 pl-10 text-xs text-white focus:border-lava outline-none placeholder:text-lava/20"
-                              />
-                           </div>
-                        </div>
-                      )}
-                   </div>
-
-                   <div className="flex items-center justify-between">
-                      <Link href="/login" className="text-[10px] uppercase font-pixel tracking-widest text-stone hover:text-white transition-colors underline">Already identified?</Link>
-                   </div>
-
-                   <Button variant={role === "architect" ? "lava" : role === "respawner" ? "sky" : "secondary"} type="submit" disabled={isLoading} className="w-full py-6 text-xl transition-all duration-300">
-                      {isLoading ? (
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="w-5 h-5 animate-spin" /> Finalizing...
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          Enlist as {role} <Rocket size={18} />
-                        </div>
-                      )}
-                   </Button>
-                </form>
-
-                <div className="mt-8 pt-8 border-t border-border/50 text-center space-y-4">
-                   <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary leading-loose">
-                     By enlisting as an <span className="text-white uppercase">{role}</span>, you agree to our <br />
-                     <span className="text-white">Collective Governance Charter</span>.
-                   </p>
-                </div>
+                <Suspense fallback={
+                  <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                    <Loader2 className="w-8 h-8 animate-spin text-sky" />
+                    <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary">Initiating Handshake...</p>
+                  </div>
+                }>
+                  <RegisterForm />
+                </Suspense>
              </Card>
           </Section>
         </div>

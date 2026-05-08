@@ -2,8 +2,8 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { useSession } from "next-auth/react";
-import { User, Shield, Zap, Trophy, LayoutDashboard, Settings } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
+import { User, Shield, Zap, Trophy, LayoutDashboard, Settings, Trash2 } from "lucide-react";
 import { Section } from "@/components/layout/Section";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
@@ -40,6 +40,21 @@ export default function DashboardPage() {
       fetchProfile();
     }
   }, [session]);
+
+  const handleDeleteAccount = async () => {
+    if (confirm("WARNING: This will permanently purge your identity and all progress. Proceed?")) {
+      try {
+        const res = await fetch("/api/user/delete", { method: "DELETE" });
+        if (res.ok) {
+          signOut({ callbackUrl: "/" });
+        } else {
+          alert("Purge failed. Insufficient clearance or system error.");
+        }
+      } catch (err) {
+        console.error("Purge failed:", err);
+      }
+    }
+  };
 
   const userName = session?.user?.name || "Member";
   const userRole = session?.user?.role || "spectator";
@@ -92,6 +107,14 @@ export default function DashboardPage() {
                        </Button>
                        <Button variant="ghost" size="sm" className="w-full justify-start text-text-secondary">
                           <Settings size={14} className="mr-3" /> Settings
+                       </Button>
+                       <Button 
+                         variant="ghost" 
+                         size="sm" 
+                         className="w-full justify-start text-lava/60 hover:text-lava hover:bg-lava/5 mt-4"
+                         onClick={handleDeleteAccount}
+                       >
+                          <Trash2 size={14} className="mr-3" /> Delete Identity
                        </Button>
                     </div>
                  </Card>

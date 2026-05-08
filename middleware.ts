@@ -7,14 +7,7 @@ export default withAuth(
     const isAuth = !!token;
     const pathname = req.nextUrl.pathname;
 
-    if (pathname.startsWith("/dashboard") && token?.role === "spectator") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-
-    if (pathname.startsWith("/workshops") && token?.role === "spectator") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-
+    // Allow spectators to see the main dashboard, but keep them away from specific pages
     if (pathname.startsWith("/admin") && token?.role !== "architect") {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }

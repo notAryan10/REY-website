@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 import { getServerSession } from "next-auth";
+import { cookies } from "next/headers";
 
 export function requireRole(session: any, allowedRoles: string[]) {
   if (!session || !session.user || !allowedRoles.includes(session.user.role)) {
@@ -61,6 +62,16 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid email or password");
         }
 
+        // Handle role elevation for credentials login
+        const cookieStore = await cookies();
+        const pendingRole = cookieStore.get("pending_role")?.value;
+        if (pendingRole && (pendingRole === "architect" || pendingRole === "respawner" || pendingRole === "spectator")) {
+          if (user.role !== pendingRole) {
+            user.role = pendingRole;
+            await user.save();
+          }
+        }
+
         return {
           id: user._id.toString(),
           email: user.email,
@@ -79,14 +90,28 @@ export const authOptions: NextAuthOptions = {
 
       await dbConnect();
       const existingUser = await User.findOne({ email: user.email });
+      const cookieStore = await cookies();
+      const pendingRole = cookieStore.get("pending_role")?.value;
+      const role = (pendingRole === "architect" || pendingRole === "respawner" || pendingRole === "spectator") 
+        ? pendingRole 
+        : null;
 
       if (!existingUser) {
         await User.create({
           name: user.name,
           email: user.email,
           image: user.image,
-          role: "spectator",
+          role: role || "spectator",
         });
+      } else if (role && existingUser.role !== role) {
+        // Elevate/Change role if a valid pending_role exists and is different
+        existingUser.role = role;
+        await existingUser.save();
+      }
+
+      // Clean up the cookie
+      if (pendingRole) {
+        cookieStore.delete("pending_role");
       }
 
       return true;
