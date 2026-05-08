@@ -1,16 +1,12 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, HTMLMotionProps } from "framer-motion";
 
-interface ButtonProps {
+interface ButtonProps extends HTMLMotionProps<"button"> {
   variant?: "primary" | "secondary" | "ghost" | "grass" | "lava" | "sky" | "sand" | "stone";
   size?: "sm" | "md" | "lg";
   children: React.ReactNode;
-  className?: string;
-  onClick?: () => void;
-  disabled?: boolean;
-  type?: "button" | "submit" | "reset";
 }
 
 export const Button = ({
@@ -21,6 +17,7 @@ export const Button = ({
   onClick,
   disabled,
   type = "button",
+  ...props
 }: ButtonProps) => {
   const baseStyles = "relative inline-flex items-center justify-center font-pixel text-xs tracking-tight transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase";
   
@@ -46,6 +43,7 @@ export const Button = ({
       type={type}
       disabled={disabled}
       onClick={onClick}
+      {...props}
       whileHover={{ 
         scale: 1.05,
         y: -2,

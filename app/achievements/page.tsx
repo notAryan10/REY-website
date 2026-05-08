@@ -29,69 +29,75 @@ const AchievementCard = ({ achievement }: { achievement: any }) => {
   return (
     <Card 
       accent={accent} 
-      className={`group relative overflow-hidden transition-all duration-500 ${
-        !achievement.unlocked ? "opacity-40 grayscale" : ""
+      className={`group relative overflow-hidden transition-all duration-500 min-h-[220px] ${
+        !achievement.unlocked ? "opacity-50 grayscale" : ""
       }`}
     >
-      <div className="flex flex-col h-full space-y-4">
+      <div className="flex flex-col h-full space-y-6">
+        {/* Header: Icon and Status Area */}
         <div className="flex items-start justify-between">
-          <div className={`w-12 h-12 flex items-center justify-center rounded-sm border-2 transition-all duration-500 ${
-            achievement.unlocked ? `border-${accent} bg-${accent}/10 text-${accent}` : "border-border/50 bg-stone/20 text-text-secondary"
+          <div className={`w-14 h-14 flex items-center justify-center rounded-lg border-2 transition-all duration-500 shadow-lg ${
+            achievement.unlocked ? `border-${accent} bg-${accent}/10 text-${accent} shadow-${accent}/20` : "border-border/50 bg-stone/20 text-text-secondary"
           }`}>
-            <IconComponent size={24} />
+            <IconComponent size={28} className={achievement.unlocked ? "animate-pulse" : ""} />
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <Badge variant={accent} className="text-[8px] font-pixel px-2 py-0.5">
-              {achievement.rarity.toUpperCase()}
-            </Badge>
-            <div className="flex items-center gap-1 text-sand">
-               <Zap size={10} className="fill-sand" />
-               <span className="text-[10px] font-pixel">+{achievement.xpReward} XP</span>
+          
+          <div className="flex flex-col items-end gap-1.5">
+            <div className="flex items-center gap-2">
+              {achievement.unlocked && <CheckCircle size={12} className={`text-${accent}`} />}
+              {!achievement.unlocked && <Lock size={12} className="text-text-secondary/50" />}
+              <Badge variant={accent} className="text-[7px] font-pixel px-2 py-0.5 tracking-tighter">
+                {achievement.rarity.toUpperCase()}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-1 text-sand/80">
+               <Zap size={10} className="fill-sand/50" />
+               <span className="text-[10px] font-pixel tracking-tighter">+{achievement.xpReward} XP</span>
             </div>
           </div>
         </div>
 
-        <div className="space-y-1 flex-grow">
-          <h4 className={`text-sm font-pixel uppercase tracking-tighter transition-colors ${
+        {/* Content Area */}
+        <div className="space-y-2 flex-grow">
+          <h4 className={`text-sm font-pixel uppercase tracking-tight leading-tight transition-colors ${
             achievement.unlocked ? "text-white" : "text-text-secondary"
           }`}>
             {achievement.title}
           </h4>
-          <p className="text-xs font-sans text-text-secondary leading-relaxed">
+          <p className="text-[11px] font-sans text-text-secondary leading-relaxed line-clamp-2">
             {achievement.description}
           </p>
         </div>
 
         {/* Progress System */}
-        <div className="space-y-2 pt-2">
-          <div className="flex justify-between items-center text-[8px] font-pixel uppercase tracking-widest text-text-secondary">
-             <span>{achievement.unlocked ? "COMPLETED" : "PROGRESS"}</span>
+        <div className="space-y-3 pt-2">
+          <div className="flex justify-between items-center text-[8px] font-pixel uppercase tracking-widest">
+             <span className={achievement.unlocked ? `text-${accent}` : "text-text-secondary"}>
+               {achievement.unlocked ? "PROTOCOL COMPLETED" : "SYNC PROGRESS"}
+             </span>
              {!achievement.unlocked && achievement.requirementValue > 1 && (
-               <span>{achievement.progress} / {achievement.requirementValue}</span>
+               <span className="text-text-secondary">{achievement.progress} / {achievement.requirementValue}</span>
              )}
           </div>
-          <div className="h-1.5 w-full bg-stone/50 rounded-full overflow-hidden">
+          <div className="h-2 w-full bg-stone/50 rounded-full overflow-hidden border border-white/5">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
-              className={`h-full bg-${accent} shadow-[0_0_10px_rgba(255,255,255,0.1)]`}
-              style={{ boxShadow: achievement.unlocked ? `0 0 10px currentColor` : "none" }}
-            />
+              transition={{ duration: 1, ease: "easeOut" }}
+              className={`h-full bg-${accent} relative`}
+            >
+              {achievement.unlocked && (
+                <div className="absolute inset-0 bg-white/20 animate-pulse" />
+              )}
+            </motion.div>
           </div>
         </div>
       </div>
       
-      {!achievement.unlocked && (
-        <div className="absolute top-2 right-2">
-          <Lock size={12} className="text-border" />
-        </div>
-      )}
-      
-      {achievement.unlocked && (
-        <div className="absolute top-2 right-2">
-          <CheckCircle size={14} className={`text-${accent}`} />
-        </div>
-      )}
+      {/* Decorative background number/letter could go here if needed */}
+      <div className={`absolute -bottom-2 -right-2 text-4xl font-pixel opacity-[0.03] select-none pointer-events-none ${achievement.unlocked ? `text-${accent}` : "text-white"}`}>
+        {achievement.rarity[0].toUpperCase()}
+      </div>
     </Card>
   );
 };
