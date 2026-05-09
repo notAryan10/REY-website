@@ -24,7 +24,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, description, accent, tag, itchIoUrl } = await req.json();
+    const { 
+      title, 
+      description, 
+      accent, 
+      tag, 
+      itchIoUrl,
+      itchId,
+      engine,
+      tags,
+      coverImage,
+      verified,
+      source,
+      devStatus,
+      featured
+    } = await req.json();
 
     // Validation
     if (!title || !description || !accent || !tag || !itchIoUrl) {
@@ -36,15 +50,37 @@ export async function POST(req: NextRequest) {
     }
 
     await dbConnect();
+    
+    // Check if user is itch verified
+    const user = await User.findOne({ email: session.user.email });
+    const canBeVerified = user && user.itchVerified && source === "itch";
+    
+    let xpToAdd = 50; // Base XP for project upload
+    if (canBeVerified && verified) xpToAdd += 50; // Extra XP for verified builds
+
     const newProject = await Project.create({
       title,
       description,
       accent,
       tag,
       itchIoUrl,
+      itchId,
+      engine,
+      tags,
+      coverImage,
+      verified: canBeVerified ? !!verified : false,
+      source: source || "manual",
+      syncStatus: (canBeVerified && verified) ? "synced" : "manual",
+      devStatus: devStatus || "released",
+      featured: !!featured,
       uploadedBy: session.user.id,
       status: "published", // Default to published for now
     });
+
+    if (user) {
+      user.xp = (user.xp || 0) + xpToAdd;
+      await user.save();
+    }
 
     return NextResponse.json(newProject, { status: 201 });
   } catch (error) {

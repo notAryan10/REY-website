@@ -97,6 +97,10 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           role: user.role,
           xp: user.xp || 0,
+          itchConnected: user.itchConnected || false,
+          itchUsername: user.itchUsername || "",
+          itchVerified: user.itchVerified || false,
+          itchVerificationToken: user.itchVerificationToken || "",
         };
       },
     }),
@@ -108,7 +112,7 @@ export const authOptions: NextAuthOptions = {
       }
 
       await dbConnect();
-      const existingUser = await User.findOne({ email: user.email });
+      const existingUser = await User.findOne({ email: user.email?.toLowerCase() });
       const cookieStore = await cookies();
       const pendingRole = cookieStore.get("pending_role")?.value;
       const role = (pendingRole && ALLOWED_ROLES.includes(pendingRole)) 
@@ -147,15 +151,23 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as NextAuthUser).role;
         token.id = user.id;
         token.xp = (user as NextAuthUser).xp;
+        token.itchConnected = (user as NextAuthUser).itchConnected;
+        token.itchUsername = (user as NextAuthUser).itchUsername;
+        token.itchVerified = (user as NextAuthUser).itchVerified;
+        token.itchVerificationToken = (user as NextAuthUser).itchVerificationToken;
       }
 
       // If it's an OAuth sign in or session update, fetch from DB
       await dbConnect();
-      const dbUser = await User.findOne({ email: token.email });
+      const dbUser = await User.findOne({ email: token.email?.toLowerCase() });
       if (dbUser) {
         token.role = dbUser.role;
         token.id = dbUser._id.toString();
         token.xp = dbUser.xp;
+        token.itchConnected = dbUser.itchConnected;
+        token.itchUsername = dbUser.itchUsername;
+        token.itchVerified = dbUser.itchVerified;
+        token.itchVerificationToken = dbUser.itchVerificationToken;
 
         // Fetch permissions if they are an admin
         if (["Founder", "Core Architect", "Moderator"].includes(dbUser.role)) {
@@ -172,6 +184,10 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id;
         session.user.xp = token.xp;
         session.user.permissions = token.permissions || [];
+        session.user.itchConnected = token.itchConnected;
+        session.user.itchUsername = token.itchUsername;
+        session.user.itchVerified = token.itchVerified;
+        session.user.itchVerificationToken = token.itchVerificationToken;
       }
       return session;
     },

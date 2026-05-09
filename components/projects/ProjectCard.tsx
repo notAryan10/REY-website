@@ -4,7 +4,8 @@ import React, { useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { 
   Gamepad2, User, Heart, MessageSquare, Send, 
-  CornerDownRight, Loader2, ChevronDown, ChevronUp 
+  CornerDownRight, Loader2, ChevronDown, ChevronUp,
+  ShieldCheck, RefreshCw, ExternalLink, Cpu
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -38,8 +39,14 @@ export const ProjectCard = ({ project: initialProject }: ProjectCardProps) => {
   const [loadingComments, setLoadingComments] = React.useState(false);
   const [newComment, setNewComment] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isResyncing, setIsResyncing] = React.useState(false);
   const [replyTo, setReplyTo] = React.useState<string | null>(null);
   const [replyContent, setReplyContent] = React.useState("");
+
+  const isOwner = session?.user?.id === (project.uploadedBy as any)?._id || session?.user?.id === (project.uploadedBy as any);
+
+  const creatorName = (project.uploadedBy as any)?.name || "Architect";
+  const creatorRole = (project.uploadedBy as any)?.role || "Member";
 
   const fetchComments = useCallback(async () => {
     setLoadingComments(true);
@@ -83,6 +90,21 @@ export const ProjectCard = ({ project: initialProject }: ProjectCardProps) => {
     } catch {
       setIsLiked(previousIsLiked);
       setProject({ ...project, likes: previousLikes }); 
+    }
+  };
+
+  const handleResync = async () => {
+    setIsResyncing(true);
+    try {
+      const res = await fetch(`/api/projects/resync/${project._id}`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setProject(data.project);
+      }
+    } catch (err) {
+      console.error("Resync failed:", err);
+    } finally {
+      setIsResyncing(false);
     }
   };
 
@@ -174,47 +196,110 @@ export const ProjectCard = ({ project: initialProject }: ProjectCardProps) => {
   };
 
   return (
-    <Card accent={project.accent} className="group hover:bg-stone/10 transition-all duration-300 flex flex-col h-full overflow-visible">
+    <Card 
+      accent={project.accent} 
+      className="group hover:bg-stone/10 transition-all duration-500 flex flex-col h-full overflow-hidden"
+    >
+      {/* Visual Header / Cover Image */}
+      <div className="relative h-48 -mx-6 -mt-6 mb-6 overflow-hidden bg-black">
+        {project.coverImage ? (
+          <motion.img 
+            src={project.coverImage} 
+            alt={project.title}
+            className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-stone/20">
+            <Gamepad2 className="w-12 h-12 text-white/10 group-hover:text-white/20 transition-colors" />
+          </div>
+        )}
+        
+        {/* Badges Overlay */}
+        <div className="absolute top-4 left-4 flex flex-col gap-2">
+          <Badge variant={project.accent} className="shadow-lg backdrop-blur-md">
+            {project.tag}
+          </Badge>
+          {project.verified && (
+            <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md border border-grass/30 px-2 py-1 rounded text-[7px] font-pixel text-grass uppercase">
+              <ShieldCheck size={10} /> Verified Build
+            </div>
+          )}
+        </div>
+
+        {project.engine && (
+          <div className="absolute bottom-4 left-4">
+             <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md border border-white/10 px-2 py-1 rounded text-[7px] font-pixel text-white/80 uppercase">
+                <Cpu size={10} className="text-sky" /> {project.engine}
+             </div>
+          </div>
+        )}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
+      </div>
+
       <div className="flex-1 space-y-4">
         <div className="flex justify-between items-start">
-          <Badge variant={project.accent}>{project.tag}</Badge>
-          <span className="text-[8px] font-pixel text-text-secondary uppercase opacity-50">
+           <h4 className="text-xl uppercase group-hover:text-white transition-colors leading-tight font-pixel tracking-tighter">
+            {project.title}
+          </h4>
+          <span className="text-[8px] font-pixel text-text-secondary uppercase opacity-50 whitespace-nowrap ml-2">
             {new Date(project.createdAt).toLocaleDateString()}
           </span>
         </div>
         
-        <h4 className="text-xl uppercase group-hover:text-white transition-colors leading-tight font-pixel tracking-tighter">
-          {project.title}
-        </h4>
-        
-        <p className="text-text-secondary text-sm font-sans line-clamp-3 mb-4">
+        <p className="text-text-secondary text-sm font-sans line-clamp-3 mb-4 leading-relaxed">
           {project.description}
         </p>
 
-        <div className="flex items-center gap-2 pt-4 border-t border-border/30">
-          <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center">
-            <User size={12} className="text-text-secondary" />
+        <div className="flex items-center justify-between pt-4 border-t border-border/30">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center border border-white/5">
+              <User size={12} className="text-text-secondary" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-white font-pixel uppercase tracking-tighter leading-none">
+                {creatorName}
+              </span>
+              <span className="text-[8px] text-grass font-pixel uppercase opacity-70">
+                {creatorRole}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-white font-pixel uppercase tracking-tighter leading-none">
-              {project.uploadedBy?.name || "Architect"}
-            </span>
-            <span className="text-[8px] text-grass font-pixel uppercase opacity-70">
-              {project.uploadedBy?.role || "Member"}
-            </span>
-          </div>
+
+          {project.source === "itch" && (
+            <div className="flex items-center gap-1 opacity-40 group-hover:opacity-80 transition-opacity">
+               <Gamepad2 size={12} className="text-white" />
+               <span className="text-[7px] font-pixel text-white">ITCH.IO_SYNC</span>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="mt-6 flex gap-2">
+      <div className="mt-6 flex flex-col gap-2">
         <Button 
           variant={project.accent} 
           size="sm" 
-          className="flex-1 font-pixel text-[10px] tracking-widest h-10 group-hover:scale-[1.02] transition-transform"
+          className="w-full font-pixel text-[10px] tracking-widest h-10 group-hover:scale-[1.01] transition-transform"
           onClick={() => window.open(project.itchIoUrl, "_blank")}
         >
-          <Gamepad2 className="w-4 h-4 mr-2" /> Link Itch
+          <ExternalLink className="w-3.5 h-3.5 mr-2" /> 
+          {project.source === "itch" ? "Play on Itch.io" : "View Deployment"}
         </Button>
+
+        {isOwner && project.source === "itch" && (
+          <button 
+            onClick={handleResync}
+            disabled={isResyncing}
+            className="flex items-center justify-center gap-2 py-2 text-[8px] font-pixel text-text-secondary hover:text-white transition-colors border border-dashed border-border/40 hover:border-border"
+          >
+            {isResyncing ? (
+              <Loader2 size={10} className="animate-spin" />
+            ) : (
+              <RefreshCw size={10} className={project.syncStatus === "outdated" ? "text-lava" : ""} />
+            )}
+            {project.syncStatus === "outdated" ? "UPDATE_SNAPSHOT" : "SYNC_METADATA"}
+          </button>
+        )}
       </div>
 
       <div className="mt-4 pt-4 border-t border-border/30 flex items-center justify-between">
@@ -238,6 +323,12 @@ export const ProjectCard = ({ project: initialProject }: ProjectCardProps) => {
             {showComments ? <ChevronUp size={10} className="ml-1" /> : <ChevronDown size={10} className="ml-1" />}
           </button>
         </div>
+        
+        {project.views !== undefined && (
+          <span className="text-[8px] font-pixel text-text-secondary opacity-30">
+            {project.views} ARCHIVE_VIEWS
+          </span>
+        )}
       </div>
 
       <AnimatePresence>

@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useSession, signOut } from "next-auth/react";
-import { User, Shield, Zap, Trophy, LayoutDashboard, Settings, Trash2 } from "lucide-react";
+import { User, Shield, Zap, Trophy, LayoutDashboard, Settings, Trash2, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { Section } from "@/components/layout/Section";
 import { Card } from "@/components/ui/Card";
@@ -15,6 +15,7 @@ import { AdminCMS } from "@/components/dashboard/AdminCMS";
 import { UserXP } from "@/components/ui/UserXP";
 import { calculateLevel } from "@/lib/xp";
 import { LeaderboardCard } from "@/components/dashboard/LeaderboardCard";
+import { ItchConnect } from "@/components/dashboard/ItchConnect";
 
 interface Quest {
   title: string;
@@ -28,29 +29,33 @@ interface Profile {
   eventWins: number;
   projectsLed: number;
   quests: Quest[];
+  itchConnected: boolean;
+  itchUsername: string;
+  itchVerified: boolean;
+  itchVerificationToken: string;
 }
 
 export default function DashboardPage() {
   const { data: session } = useSession();
   const [profile, setProfile] = React.useState<Profile | null>(null);
 
-  React.useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch("/api/user/profile");
-        if (res.ok) {
-          const data = await res.json();
-          setProfile(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch profile:", err);
+  const fetchProfile = React.useCallback(async () => {
+    try {
+      const res = await fetch("/api/user/profile");
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data);
       }
-    };
+    } catch (err) {
+      console.error("Failed to fetch profile:", err);
+    }
+  }, []);
 
+  React.useEffect(() => {
     if (session) {
       fetchProfile();
     }
-  }, [session]);
+  }, [session, fetchProfile]);
 
   const handleDeleteAccount = async () => {
     if (confirm("WARNING: This will permanently purge your identity and all progress. Proceed?")) {
@@ -100,7 +105,15 @@ export default function DashboardPage() {
                     <div className="space-y-4">
                        <h3 className="text-2xl uppercase tracking-tighter text-white">{userName}</h3>
                        <div className="flex flex-col items-center gap-3">
-                         <Badge variant="sky" className="px-4 py-1.5">{userRole}</Badge>
+                         <div className="flex items-center gap-2">
+                           <Badge variant="sky" className="px-4 py-1.5">{userRole}</Badge>
+                           {profile?.itchVerified && (
+                             <div className="bg-grass/10 text-grass p-1.5 rounded-sm border border-grass/20 flex items-center gap-1.5" title="Itch.io Verified Identity">
+                               <ShieldCheck size={14} />
+                               <span className="text-[7px] font-pixel uppercase tracking-tighter">Verified Dev</span>
+                             </div>
+                           )}
+                         </div>
                          <UserXP 
                             level={userStats.level} 
                             xp={userStats.currentLevelXp} 
@@ -157,7 +170,7 @@ export default function DashboardPage() {
                        </p>
                        <div className="pt-4 flex gap-4">
                           <Link href="/projects">
-                            <Button variant="grass" size="sm">Continue Building</Button>
+                            <Button variant="grass" size="sm">Archive Build</Button>
                           </Link>
                           <Link href="/operations">
                             <Button variant="secondary" size="sm">Daily Tasks</Button>
@@ -166,19 +179,28 @@ export default function DashboardPage() {
                     <div className="absolute top-0 right-0 w-32 h-32 bg-grass/10 blur-3xl animate-pulse" />
                  </Card>
 
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card className="text-center space-y-2 border-border/50 group">
-                       <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary group-hover:text-white transition-colors">Event Wins</p>
-                       <p className="text-3xl font-pixel text-white">{eventWins.toString().padStart(2, '0')}</p>
-                    </Card>
-                    <Card className="text-center space-y-2 border-border/50 group">
-                       <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary group-hover:text-white transition-colors">Projects Led</p>
-                       <p className="text-3xl font-pixel text-white">{projectsLed.toString().padStart(2, '0')}</p>
-                    </Card>
-                    <Card className="text-center space-y-2 border-border/50 group">
-                       <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary group-hover:text-white transition-colors">Club XP</p>
-                       <p className="text-3xl font-pixel text-white">{xp >= 1000 ? `${(xp / 1000).toFixed(1)}K` : xp}</p>
-                    </Card>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <ItchConnect 
+                      initialConnected={profile?.itchConnected} 
+                      initialUsername={profile?.itchUsername} 
+                      initialVerified={profile?.itchVerified}
+                      verificationToken={profile?.itchVerificationToken}
+                      onSuccess={fetchProfile}
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                      <Card className="text-center space-y-2 border-border/50 group flex flex-col justify-center">
+                        <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary group-hover:text-white transition-colors">Event Wins</p>
+                        <p className="text-2xl font-pixel text-white">{eventWins.toString().padStart(2, '0')}</p>
+                      </Card>
+                      <Card className="text-center space-y-2 border-border/50 group flex flex-col justify-center">
+                        <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary group-hover:text-white transition-colors">Artifacts Led</p>
+                        <p className="text-2xl font-pixel text-white">{projectsLed.toString().padStart(2, '0')}</p>
+                      </Card>
+                      <Card className="text-center space-y-2 border-border/50 group flex flex-col justify-center">
+                        <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary group-hover:text-white transition-colors">Club XP</p>
+                        <p className="text-2xl font-pixel text-white">{xp >= 1000 ? `${(xp / 1000).toFixed(1)}K` : xp}</p>
+                      </Card>
+                    </div>
                  </div>
 
                  <ScrollReveal direction="up">

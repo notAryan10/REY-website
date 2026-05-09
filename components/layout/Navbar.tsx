@@ -54,7 +54,7 @@ export const Navbar = () => {
     { name: "Game Jams", href: "/gamejams" },
     { name: "Operations", href: "/operations" },
     { name: "Achievements", href: "/achievements" },
-    { name: "Projects", href: "/projects" },
+    { name: "Repository", href: "/projects" },
     { name: "Workshops", href: "/workshops" },
     { name: "Resources", href: "/resources" },
   ];

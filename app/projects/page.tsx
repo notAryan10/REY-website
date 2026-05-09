@@ -12,14 +12,28 @@ import { Badge } from "@/components/ui/Badge";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProjectCard } from "@/components/projects/ProjectCard";
-import { IProject } from "@/types";
+import { ItchImport } from "@/components/projects/ItchImport";
+import { IProject, User as IProfile } from "@/types";
 
 export default function ProjectsPage() {
   const { data: session, status } = useSession();
   const [projects, setProjects] = React.useState<IProject[]>([]);
+  const [profile, setProfile] = React.useState<IProfile | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [showForm, setShowForm] = React.useState(false);
+  const [submissionMode, setSubmissionMode] = React.useState<"manual" | "itch" | null>(null);
+
+  const fetchProfile = React.useCallback(async () => {
+    try {
+      const res = await fetch("/api/user/profile");
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch profile:", err);
+    }
+  }, []);
 
   const [formData, setFormData] = React.useState({
     title: "",
@@ -48,7 +62,8 @@ export default function ProjectsPage() {
       socket.connect();
     }
     fetchProjects();
-  }, []);
+    if (session) fetchProfile();
+  }, [session, fetchProfile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +84,7 @@ export default function ProjectsPage() {
           accent: "sky",
           tag: "Community Project"
         });
-        setShowForm(false);
+        setSubmissionMode(null);
         fetchProjects();
         
         if (session?.user?.id) {
@@ -90,41 +105,56 @@ export default function ProjectsPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1 pt-24 pb-20">
-        <Section title="The Workshop" subtitle="community projects" accent="grass">
+        <Section title="Build Repository" subtitle="project archives" accent="grass">
           <div className="space-y-16 pt-8">
             <ScrollReveal direction="up">
               <div className="max-w-4xl mx-auto">
                 <Card accent="grass" className="bg-grass/5 border-grass/20 p-8 md:p-12 text-center overflow-visible relative">
                   <div className="space-y-6 relative z-10">
-                    <h2 className="text-3xl md:text-5xl uppercase leading-tight font-pixel">Share Your <span className="text-grass underline underline-offset-8">Build</span></h2>
+                    <h2 className="text-3xl md:text-5xl uppercase leading-tight font-pixel">Archive Your <span className="text-grass underline underline-offset-8">Build</span></h2>
                     <p className="text-text-secondary text-sm md:text-md font-sans max-w-xl mx-auto">
-                      Constructed something legendary? Link your Itch.io project here and let the R.E.Y collective experience your blueprint.
+                      Constructed something legendary? Synchronize your Itch.io project or link a manual build to the R.E.Y collective.
                     </p>
                     
                     {status === "unauthenticated" ? (
                       <div className="pt-4">
                         <Link href="/login">
-                          <Button variant="grass" size="lg">Login to Submit</Button>
+                          <Button variant="grass" size="lg">Login to Deploy</Button>
                         </Link>
                       </div>
                     ) : (
-                      <div className="pt-4">
+                      <div className="pt-6 flex flex-wrap justify-center gap-4">
                         <Button 
-                          variant={showForm ? "secondary" : "grass"} 
+                          variant={submissionMode === "itch" ? "secondary" : "grass"} 
                           size="lg" 
-                          onClick={() => setShowForm(!showForm)}
-                          className="px-10"
+                          onClick={() => {
+                            if (profile?.itchVerified) {
+                              setSubmissionMode(submissionMode === "itch" ? null : "itch");
+                            } else {
+                              window.location.href = "/dashboard";
+                            }
+                          }}
+                          className="px-8 min-w-[200px]"
                         >
-                          {showForm ? "Cancel Mission" : "Submit New Project"}
+                          {!profile?.itchConnected ? "Sync Itch.io Build" : (profile?.itchVerified ? (submissionMode === "itch" ? "Abort Sync" : "Sync Itch.io Build") : "Complete Verification")}
+                        </Button>
+                        <Button 
+                          variant={submissionMode === "manual" ? "secondary" : "stone"} 
+                          size="lg" 
+                          onClick={() => setSubmissionMode(submissionMode === "manual" ? null : "manual")}
+                          className="px-8 min-w-[200px]"
+                        >
+                          {submissionMode === "manual" ? "Cancel Manual" : "Manual Deployment"}
                         </Button>
                       </div>
                     )}
                   </div>
                 </Card>
 
-                <AnimatePresence>
-                  {showForm && (
+                <AnimatePresence mode="wait">
+                  {submissionMode === "manual" && (
                     <motion.div
+                      key="manual-form"
                       initial={{ opacity: 0, height: 0, y: -20 }}
                       animate={{ opacity: 1, height: "auto", y: 0 }}
                       exit={{ opacity: 0, height: 0, y: -20 }}
@@ -134,7 +164,7 @@ export default function ProjectsPage() {
                         <form onSubmit={handleSubmit} className="space-y-6 p-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                              <label className="text-[10px] uppercase font-pixel text-text-secondary">Project Name</label>
+                              <label className="text-[10px] uppercase font-pixel text-text-secondary">Artifact Name</label>
                               <input 
                                 required
                                 value={formData.title}
@@ -144,7 +174,7 @@ export default function ProjectsPage() {
                               />
                             </div>
                             <div className="space-y-2">
-                              <label className="text-[10px] uppercase font-pixel text-text-secondary">Itch.io Link</label>
+                              <label className="text-[10px] uppercase font-pixel text-text-secondary">External Link</label>
                               <input 
                                 required
                                 type="url"
@@ -192,6 +222,24 @@ export default function ProjectsPage() {
                           </div>
                         </form>
                       </Card>
+                    </motion.div>
+                  )}
+
+                  {submissionMode === "itch" && (
+                    <motion.div
+                      key="itch-import"
+                      initial={{ opacity: 0, height: 0, y: -20 }}
+                      animate={{ opacity: 1, height: "auto", y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -20 }}
+                      className="overflow-hidden mt-8"
+                    >
+                      <ItchImport 
+                        onImportComplete={() => {
+                          setSubmissionMode(null);
+                          fetchProjects();
+                        }}
+                        onCancel={() => setSubmissionMode(null)}
+                      />
                     </motion.div>
                   )}
                 </AnimatePresence>

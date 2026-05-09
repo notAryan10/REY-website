@@ -83,6 +83,17 @@ export interface IProject {
   title: string;
   description: string;
   itchIoUrl: string;
+  itchId?: string;
+  engine?: string;
+  tags?: string[];
+  coverImage?: string;
+  verified?: boolean;
+  downloads?: number;
+  views?: number;
+  syncStatus?: "synced" | "outdated" | "manual";
+  source?: "manual" | "itch" | "github" | "gamejolt";
+  devStatus?: "prototype" | "in-development" | "released" | "archived";
+  featured?: boolean;
   accent: "lava" | "sky" | "grass" | "sand";
   tag: string;
   uploadedBy: {
@@ -113,6 +124,10 @@ export interface User {
   status: "active" | "suspended" | "maintenance";
   image?: string;
   xp: number;
+  itchConnected?: boolean;
+  itchUsername?: string;
+  itchVerified?: boolean;
+  itchVerificationToken?: string;
   eventWins: number;
   projectsLed: number;
   achievements: UserAchievement[];

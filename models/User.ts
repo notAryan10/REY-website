@@ -66,6 +66,22 @@ const UserSchema = new mongoose.Schema(
     ],
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+    itchConnected: {
+      type: Boolean,
+      default: false,
+    },
+    itchUsername: {
+      type: String,
+      default: "",
+    },
+    itchVerificationToken: {
+      type: String,
+      default: "",
+    },
+    itchVerified: {
+      type: Boolean,
+      default: false,
+    },
     quests: [
       {
         title: String,

@@ -8,12 +8,20 @@ declare module "next-auth" {
       role: string;
       xp: number;
       permissions: string[];
+      itchConnected: boolean;
+      itchUsername: string;
+      itchVerified: boolean;
+      itchVerificationToken: string;
     } & DefaultSession["user"];
   }
 
   interface User extends DefaultUser {
     role: string;
     xp: number;
+    itchConnected: boolean;
+    itchUsername: string;
+    itchVerified: boolean;
+    itchVerificationToken: string;
   }
 }
 
@@ -23,5 +31,9 @@ declare module "next-auth/jwt" {
     id: string;
     xp: number;
     permissions?: string[];
+    itchConnected: boolean;
+    itchUsername: string;
+    itchVerified: boolean;
+    itchVerificationToken: string;
   }
 }

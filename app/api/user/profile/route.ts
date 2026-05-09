@@ -6,14 +6,14 @@ import { getUserFromSession } from "@/lib/auth";
 export async function GET() {
   try {
     const session = await getUserFromSession();
-    
-    if (!session || !session.user?.email) {
+
+    if (!session || !session.user?.id) {
       return NextResponse.json({ error: "Unauthorized: Access required" }, { status: 401 });
     }
 
     await dbConnect();
 
-    const user = await User.findOne({ email: session.user.email }).select("-password");
+    const user = await User.findById(session.user.id).select("-password");
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
