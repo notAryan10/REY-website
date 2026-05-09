@@ -43,9 +43,10 @@ export default function EventsPage() {
   }, []);
 
   const handleJoinEvent = (event: IEvent) => {
-    const userRole = session?.user?.role;
+    const userRole = session?.user?.role || "";
+    const adminRoles = ["Founder", "Core Architect", "architect"];
 
-    if (userRole === "architect") {
+    if (adminRoles.includes(userRole)) {
       setManagingEvent(event);
       return;
     }

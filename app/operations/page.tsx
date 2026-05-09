@@ -20,12 +20,14 @@ import { ActivityFeed } from "@/components/operations/ActivityFeed";
 import { IUserQuest, IStreak } from "@/types";
 
 export default function OperationsPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [quests, setQuests] = useState<IUserQuest[]>([]);
   const [streak, setStreak] = useState<IStreak | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
   const [xpPopups, setXpPopups] = useState<{ id: number, amount: number }[]>([]);
+  const initialized = React.useRef(false);
+  const prevQuestsRef = React.useRef<IUserQuest[]>([]);
 
   const categories = [
     "All",
@@ -39,6 +41,7 @@ export default function OperationsPage() {
   ];
 
   const fetchData = React.useCallback(async () => {
+    // Only set loading true on initial load or manual refresh
     setLoading(true);
     try {
       const [questsRes, streakRes] = await Promise.all([
@@ -48,21 +51,7 @@ export default function OperationsPage() {
 
       if (questsRes.ok) {
         const newQuests: IUserQuest[] = await questsRes.json();
-        
-        setQuests(prevQuests => {
-          // Find newly completed quests to show XP popups
-          newQuests.forEach((nq) => {
-              const oldQ = prevQuests.find(oq => oq._id === nq._id);
-              if (oldQ && !oldQ.completed && nq.completed) {
-                  const id = Date.now() + Math.random();
-                  setXpPopups(prev => [...prev, { id, amount: nq.questId.xpReward }]);
-                  setTimeout(() => {
-                      setXpPopups(prev => prev.filter(p => p.id !== id));
-                  }, 2000);
-              }
-          });
-          return newQuests;
-        });
+        setQuests(newQuests);
       }
       if (streakRes.ok) setStreak(await streakRes.json());
     } catch (err) {
@@ -73,10 +62,27 @@ export default function OperationsPage() {
   }, []);
 
   useEffect(() => {
-    if (session) {
+    if (status === "authenticated" && !initialized.current) {
       fetchData();
+      initialized.current = true;
     }
-  }, [session, fetchData]);
+  }, [status, fetchData]);
+
+  useEffect(() => {
+    if (prevQuestsRef.current.length > 0) {
+      quests.forEach((nq) => {
+        const oldQ = prevQuestsRef.current.find(oq => oq._id === nq._id);
+        if (oldQ && !oldQ.completed && nq.completed) {
+          const id = Date.now() + Math.random();
+          setXpPopups(prev => [...prev, { id, amount: nq.questId?.xpReward || 0 }]);
+          setTimeout(() => {
+            setXpPopups(prev => prev.filter(p => p.id !== id));
+          }, 2000);
+        }
+      });
+    }
+    prevQuestsRef.current = quests;
+  }, [quests]);
 
   const filteredQuests = quests.filter(uq => {
     if (!uq.questId) return false;
@@ -84,12 +90,20 @@ export default function OperationsPage() {
     return uq.questId.category.toLowerCase() === activeCategory.toLowerCase();
   });
 
-  if (!session) {
+  if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-24">
+      <div className="min-h-screen bg-architect-bg flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-architect-green/20 border-t-architect-green rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <div className="min-h-screen flex items-center justify-center pt-24 bg-architect-bg">
         <Card accent="lava" className="max-w-md text-center">
           <Lock className="mx-auto text-lava mb-4" size={48} />
-          <h2 className="text-xl font-pixel mb-2">Access Denied</h2>
+          <h2 className="text-xl font-pixel mb-2 text-white">Access Denied</h2>
           <p className="text-text-secondary text-sm mb-6">You must be synchronized with the network to access daily operations.</p>
           <Button variant="lava" onClick={() => window.location.href = "/login"}>Initialize Login</Button>
         </Card>

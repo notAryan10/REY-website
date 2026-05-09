@@ -143,7 +143,7 @@ export function EventManagementModal({ event, onClose, onUpdate }: EventManageme
               <Calendar className={`text-${event.accent || 'lava'}`} size={20} />
             </div>
             <div>
-              <h3 className="text-xl uppercase font-pixel tracking-tighter">Architect Management</h3>
+              <h3 className="text-xl uppercase font-pixel tracking-tighter">Core Management</h3>
               <p className="text-[10px] uppercase font-pixel text-text-secondary tracking-widest">{event.title}</p>
             </div>
           </div>

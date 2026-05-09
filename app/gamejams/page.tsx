@@ -37,7 +37,10 @@ export default function GameJamsPage() {
   }, []);
 
   const handleAction = (jam: IEvent) => {
-    if (session?.user?.role === "architect") {
+    const userRole = session?.user?.role || "";
+    const adminRoles = ["Founder", "Core Architect", "architect"];
+
+    if (adminRoles.includes(userRole)) {
       setManagingJam(jam);
     } else {
       // Regular user action
@@ -101,14 +104,14 @@ export default function GameJamsPage() {
                       )}
                     </div>
                     
-                      <Button 
+                    <Button 
                         variant={(jam.submissionDate && new Date(jam.submissionDate) < new Date()) ? "secondary" : "grass"}
                         size="sm" 
                         className="w-full uppercase font-pixel text-[10px] tracking-widest"
                         onClick={() => handleAction(jam)}
-                        disabled={!!(jam.submissionDate && new Date(jam.submissionDate) < new Date()) && session?.user?.role !== "architect"}
+                        disabled={!!(jam.submissionDate && new Date(jam.submissionDate) < new Date()) && !["Founder", "Core Architect", "architect"].includes(session?.user?.role || "")}
                       >
-                        {session?.user?.role === "architect" ? "Manage Jam" : ((jam.submissionDate && new Date(jam.submissionDate) < new Date()) ? "Submissions Closed" : "Submit Project")}
+                        {["Founder", "Core Architect", "architect"].includes(session?.user?.role || "") ? "Manage Jam" : ((jam.submissionDate && new Date(jam.submissionDate) < new Date()) ? "Submissions Closed" : "Submit Project")}
                         <ArrowRight size={14} className="ml-2" />
                       </Button>
 

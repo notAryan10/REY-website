@@ -46,9 +46,9 @@ export async function DELETE(
     const session = await getUserFromSession();
 
     try {
-      requireRole(session, ["architect"]);
+      requireRole(session, ["Founder", "Core Architect", "architect"]);
     } catch {
-      return NextResponse.json({ error: "Forbidden: Architect Clearance Required" }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden: Elevated Clearance Required" }, { status: 403 });
     }
 
     await dbConnect();
@@ -77,9 +77,9 @@ export async function PATCH(
     const session = await getUserFromSession();
 
     try {
-      requireRole(session, ["architect"]);
+      requireRole(session, ["Founder", "Core Architect", "architect"]);
     } catch {
-      return NextResponse.json({ error: "Forbidden: Architect Clearance Required" }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden: Elevated Clearance Required" }, { status: 403 });
     }
 
     await dbConnect();
