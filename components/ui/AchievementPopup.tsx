@@ -3,10 +3,42 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { socket } from "@/lib/socket";
-import { Trophy, Zap } from "lucide-react";
-import * as LucideIcons from "lucide-react";
+import { 
+  Trophy, 
+  Zap, 
+  Star, 
+  Shield, 
+  Rocket, 
+  Target, 
+  Cpu, 
+  Code, 
+  Terminal,
+  Crown,
+  Award,
+  Medal,
+  Activity,
+  Users
+} from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Achievement } from "@/types";
+
+// Map icon names from DB to components
+const ICON_MAP: Record<string, React.ElementType> = {
+  Trophy,
+  Zap,
+  Star,
+  Shield,
+  Rocket,
+  Target,
+  Cpu,
+  Code,
+  Terminal,
+  Crown,
+  Award,
+  Medal,
+  Activity,
+  Users
+};
 
 // Map rarity to project theme colors
 const RARITY_MAP: Record<string, "grass" | "lava" | "sky" | "sand" | "stone"> = {
@@ -49,7 +81,9 @@ export const AchievementPopup = () => {
 
   const accent = RARITY_MAP[notification.rarity] || "stone";
   const color = THEME_COLORS[accent];
-  const IconComponent = (LucideIcons as unknown as Record<string, React.ElementType>)[notification.icon] || Trophy;
+  
+  // Safe lookup with fallback
+  const IconComponent = ICON_MAP[notification.icon] || Trophy;
 
   return (
     <AnimatePresence>

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import dbConnect from "@/lib/mongodb";
 import UserQuest from "@/models/UserQuest";
 import User from "@/models/User";
@@ -21,12 +22,40 @@ export async function GET() {
     }
 
     // Find all user quests and populate quest details
-    const userQuests = await UserQuest.find({ userId: user._id })
+    let userQuests = await UserQuest.find({ userId: user._id })
       .populate({
         path: "questId",
-        model: "Quest" // Explicitly name the model
+        model: "Quest"
       })
       .sort({ createdAt: -1 });
+
+    // If no quests found, assign some initial ones (fallback for new users)
+    if (userQuests.length === 0) {
+      const availableQuests = await mongoose.model("Quest").find({ isActive: true });
+      if (availableQuests.length > 0) {
+        const selectedQuests = [...availableQuests]
+          .sort(() => 0.5 - Math.random())
+          .slice(0, 4);
+        
+        const assignments = selectedQuests.map(q => ({
+          userId: user._id,
+          questId: q._id,
+          progress: 0,
+          completed: false,
+          claimed: false
+        }));
+
+        await UserQuest.insertMany(assignments);
+        
+        // Fetch again to get populated data
+        userQuests = await UserQuest.find({ userId: user._id })
+          .populate({
+            path: "questId",
+            model: "Quest"
+          })
+          .sort({ createdAt: -1 });
+      }
+    }
 
     return NextResponse.json(userQuests);
   } catch (error) {

@@ -39,9 +39,6 @@ export default function OperationsPage() {
   ];
 
   const fetchData = React.useCallback(async () => {
-    // Check if we gained XP (simplified check)
-    const oldQuests = [...quests];
-    
     setLoading(true);
     try {
       const [questsRes, streakRes] = await Promise.all([
@@ -52,19 +49,20 @@ export default function OperationsPage() {
       if (questsRes.ok) {
         const newQuests: IUserQuest[] = await questsRes.json();
         
-        // Find newly completed quests to show XP popups
-        newQuests.forEach((nq) => {
-            const oldQ = oldQuests.find(oq => oq._id === nq._id);
-            if (oldQ && !oldQ.completed && nq.completed) {
-                const id = Date.now() + Math.random();
-                setXpPopups(prev => [...prev, { id, amount: nq.questId.xpReward }]);
-                setTimeout(() => {
-                    setXpPopups(prev => prev.filter(p => p.id !== id));
-                }, 2000);
-            }
+        setQuests(prevQuests => {
+          // Find newly completed quests to show XP popups
+          newQuests.forEach((nq) => {
+              const oldQ = prevQuests.find(oq => oq._id === nq._id);
+              if (oldQ && !oldQ.completed && nq.completed) {
+                  const id = Date.now() + Math.random();
+                  setXpPopups(prev => [...prev, { id, amount: nq.questId.xpReward }]);
+                  setTimeout(() => {
+                      setXpPopups(prev => prev.filter(p => p.id !== id));
+                  }, 2000);
+              }
+          });
+          return newQuests;
         });
-
-        setQuests(newQuests);
       }
       if (streakRes.ok) setStreak(await streakRes.json());
     } catch (err) {
@@ -72,7 +70,7 @@ export default function OperationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [quests]);
+  }, []);
 
   useEffect(() => {
     if (session) {
@@ -81,6 +79,7 @@ export default function OperationsPage() {
   }, [session, fetchData]);
 
   const filteredQuests = quests.filter(uq => {
+    if (!uq.questId) return false;
     if (activeCategory === "All") return true;
     return uq.questId.category.toLowerCase() === activeCategory.toLowerCase();
   });

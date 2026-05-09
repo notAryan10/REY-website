@@ -37,8 +37,9 @@ export function StatsOverview({ quests, streak, loading }: StatsOverviewProps) {
     return () => clearInterval(timer);
   }, []);
 
-  const completedCount = quests.filter(q => q.completed).length;
-  const xpEarned = quests.filter(q => q.completed).reduce((acc, q) => acc + q.questId.xpReward, 0);
+  const completedQuests = quests.filter(q => q.completed && q.questId);
+  const completedCount = completedQuests.length;
+  const xpEarned = completedQuests.reduce((acc, q) => acc + (q.questId?.xpReward || 0), 0);
 
   const stats = [
     {

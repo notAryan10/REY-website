@@ -28,6 +28,9 @@ interface QuestCardProps {
 export function QuestCard({ userQuest, onComplete }: QuestCardProps) {
   const { data: session } = useSession();
   const [submitting, setSubmitting] = useState(false);
+  
+  if (!userQuest || !userQuest.questId) return null;
+  
   const { questId: quest, progress, completed } = userQuest;
 
   const handleComplete = async () => {
