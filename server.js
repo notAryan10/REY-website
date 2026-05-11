@@ -41,6 +41,12 @@ const UserSchema = new mongoose.Schema({
   xp: { type: Number, default: 0 },
   eventWins: { type: Number, default: 0 },
   projectsLed: { type: Number, default: 0 },
+  itchConnected: { type: Boolean, default: false },
+  itchUsername: { type: String, default: "" },
+  itchVerificationToken: { type: String, default: "" },
+  itchVerified: { type: Boolean, default: false },
+  itchVerifiedAt: Date,
+  itchVerificationExpires: Date,
   achievements: [
     {
       achievementId: {

@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.env*
+*.local
+README.md
+Dockerfile
+docker-compose.yml
+.agent
+.gemini
+.gsd
+GSD-STYLE.md
+PROJECT_RULES.md
+model_capabilities.yaml

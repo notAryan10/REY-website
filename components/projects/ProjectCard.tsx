@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { 
   Gamepad2, User, Heart, MessageSquare, Send, 
   CornerDownRight, Loader2, ChevronDown, ChevronUp,
-  ShieldCheck, RefreshCw, ExternalLink, Cpu
+  ShieldCheck, RefreshCw, ExternalLink, Cpu, Trash2
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -40,9 +40,11 @@ export const ProjectCard = ({ project: initialProject }: ProjectCardProps) => {
   const [newComment, setNewComment] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isResyncing, setIsResyncing] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
   const [replyTo, setReplyTo] = React.useState<string | null>(null);
   const [replyContent, setReplyContent] = React.useState("");
 
+  const isAdmin = ["Founder", "Core Architect", "Moderator"].includes(session?.user?.role || "");
   const isOwner = session?.user?.id === (project.uploadedBy as any)?._id || session?.user?.id === (project.uploadedBy as any);
 
   const creatorName = (project.uploadedBy as any)?.name || "Architect";
@@ -105,6 +107,32 @@ export const ProjectCard = ({ project: initialProject }: ProjectCardProps) => {
       console.error("Resync failed:", err);
     } finally {
       setIsResyncing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    const confirmMsg = isAdmin 
+      ? "CRITICAL: As a Founder/Admin, you are about to purge this artifact from the archives. This action is irreversible. Proceed?"
+      : "Are you sure you want to delete your project from the archives?";
+
+    if (!confirm(confirmMsg)) return;
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/projects/${project._id}`, { method: "DELETE" });
+      if (res.ok) {
+        // Since we can't easily remove it from the parent list without a refresh or state lifting,
+        // we'll just reload the page for now as it's the safest way to clear the cache/UI.
+        window.location.reload();
+      } else {
+        const data = await res.json();
+        alert(`Purge failed: ${data.error || "Unknown protocol error"}`);
+      }
+    } catch (err) {
+      console.error("Deletion failed:", err);
+      alert("Network failure during purge sequence.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -286,20 +314,35 @@ export const ProjectCard = ({ project: initialProject }: ProjectCardProps) => {
           {project.source === "itch" ? "Play on Itch.io" : "View Deployment"}
         </Button>
 
-        {isOwner && project.source === "itch" && (
-          <button 
-            onClick={handleResync}
-            disabled={isResyncing}
-            className="flex items-center justify-center gap-2 py-2 text-[8px] font-pixel text-text-secondary hover:text-white transition-colors border border-dashed border-border/40 hover:border-border"
-          >
-            {isResyncing ? (
-              <Loader2 size={10} className="animate-spin" />
-            ) : (
-              <RefreshCw size={10} className={project.syncStatus === "outdated" ? "text-lava" : ""} />
-            )}
-            {project.syncStatus === "outdated" ? "UPDATE_SNAPSHOT" : "SYNC_METADATA"}
-          </button>
-        )}
+        <div className="flex gap-2">
+          {isOwner && project.source === "itch" && (
+            <button 
+              onClick={handleResync}
+              disabled={isResyncing || isDeleting}
+              className="flex-1 flex items-center justify-center gap-2 py-2 text-[8px] font-pixel text-text-secondary hover:text-white transition-colors border border-dashed border-border/40 hover:border-border"
+            >
+              {isResyncing ? (
+                <Loader2 size={10} className="animate-spin" />
+              ) : (
+                <RefreshCw size={10} className={project.syncStatus === "outdated" ? "text-lava" : ""} />
+              )}
+              {project.syncStatus === "outdated" ? "UPDATE_SNAPSHOT" : "SYNC_METADATA"}
+            </button>
+          )}
+
+          {(isOwner || isAdmin) && (
+            <button 
+              onClick={handleDelete}
+              disabled={isDeleting || isResyncing}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-[8px] font-pixel transition-colors border border-dashed border-lava/30 ${
+                isDeleting ? "text-lava/50" : "text-lava/70 hover:text-lava hover:border-lava"
+              }`}
+            >
+              {isDeleting ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}
+              PURGE ARTIFACT
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mt-4 pt-4 border-t border-border/30 flex items-center justify-between">

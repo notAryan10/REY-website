@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Itch.io username is required" }, { status: 400 });
     }
 
-    // Extraction logic improvement
+    // Extraction logic improvement with strict sanitization
     let processedUsername = itchUsername.trim();
     if (processedUsername.includes("itch.io")) {
        const match = processedUsername.match(/(?:https?:\/\/)?(.*?)\.itch\.io/);
@@ -47,14 +47,22 @@ export async function POST(req: NextRequest) {
          if (profileMatch) processedUsername = profileMatch[1];
        }
     }
-    processedUsername = processedUsername.replace(/\/$/, "").toLowerCase();
+    
+    // Strict Sanitization: Convert underscores to hyphens and only allow alphanumeric/hyphens
+    processedUsername = processedUsername.replace(/_/g, "-").replace(/[^a-zA-Z0-9-]/g, "").toLowerCase();
+
+    if (!processedUsername) {
+      return NextResponse.json({ error: "VALIDATION_ERROR: Invalid Itch.io username format." }, { status: 400 });
+    }
 
     // Handshake Sector Ping
     try {
       const subdomains = [processedUsername, processedUsername.replace(/_/g, "-")];
       let exists = false;
       for (const sub of subdomains) {
-        const verifyRes = await fetch(`https://${sub}.itch.io`, { 
+        // Strict domain validation: always HTTPS and .itch.io
+        const targetUrl = `https://${sub}.itch.io`;
+        const verifyRes = await fetch(targetUrl, { 
           method: "HEAD", 
           headers: { 'User-Agent': 'Mozilla/5.0 R.E.Y-Handshake-Scanner/1.0' } 
         });
@@ -75,6 +83,7 @@ export async function POST(req: NextRequest) {
     // Generate fresh token
     const randomSuffix = Math.random().toString(36).substring(2, 7).toUpperCase();
     const token = `REY-VERIFY-${randomSuffix}`;
+    const expires = new Date(Date.now() + 1000 * 60 * 30); // 30 minutes
 
     // Direct field mutation + save — avoids $set/$inc operator conflicts
     const wasConnected = user.itchConnected;
@@ -82,14 +91,16 @@ export async function POST(req: NextRequest) {
     user.itchConnected = true;
     user.itchVerified = false;
     user.itchVerificationToken = token;
+    user.itchVerificationExpires = expires;
     if (!wasConnected) user.xp = (user.xp || 0) + 50;
 
     const savedUser = await user.save();
-    console.log(`[ITCH_CONNECT] Saved user ${savedUser._id} | token: ${savedUser.itchVerificationToken} | username: ${savedUser.itchUsername}`);
+    console.log(`[ITCH_CONNECT] Saved user ${savedUser._id} | token: ${savedUser.itchVerificationToken} | expires: ${expires}`);
 
     return NextResponse.json({ 
-      message: "Itch.io profile linked. Verification required.",
-      token,           // Direct token — guaranteed source of truth for UI
+      message: "Itch.io profile linked. Verification required (expires in 30m).",
+      token,
+      expires,
       user: savedUser
     });
   } catch (error) {

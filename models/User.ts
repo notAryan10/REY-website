@@ -82,6 +82,12 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    itchVerifiedAt: {
+      type: Date,
+    },
+    itchVerificationExpires: {
+      type: Date,
+    },
     quests: [
       {
         title: String,

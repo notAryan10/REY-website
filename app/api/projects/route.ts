@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Project from "@/models/Project";
+import User from "@/models/User";
 import { getUserFromSession } from "@/lib/auth";
 
 export async function GET() {
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
       itchId,
       engine,
       tags,
+      screenshots,
       coverImage,
       verified,
       source,
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
     } = await req.json();
 
     // Validation
-    if (!title || !description || !accent || !tag || !itchIoUrl) {
+    if (!title || !accent || !tag || !itchIoUrl) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -49,7 +51,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Title too short" }, { status: 400 });
     }
 
+    // Default description for Itch imports if missing
+    const finalDescription = description || (source === "itch" ? "Synchronized build repository from Itch.io network." : "");
+
+    if (!finalDescription) {
+      return NextResponse.json({ error: "Description is required" }, { status: 400 });
+    }
+
     await dbConnect();
+    
+    // PROJECT OWNERSHIP LOCK: Prevent duplicate claims
+    const existingProject = await Project.findOne({ itchIoUrl });
+    if (existingProject) {
+      return NextResponse.json({ 
+        error: "DUPLICATE_CLAIM: This project has already been registered in the R.E.Y network.",
+        details: "If you believe this is an error, please contact a Moderator."
+      }, { status: 409 });
+    }
     
     // Check if user is itch verified
     const user = await User.findOne({ email: session.user.email });
@@ -60,13 +78,14 @@ export async function POST(req: NextRequest) {
 
     const newProject = await Project.create({
       title,
-      description,
+      description: finalDescription,
       accent,
       tag,
       itchIoUrl,
       itchId,
       engine,
       tags,
+      screenshots,
       coverImage,
       verified: canBeVerified ? !!verified : false,
       source: source || "manual",

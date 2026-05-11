@@ -37,6 +37,8 @@ export async function POST(
     if (metadata.description) project.description = metadata.description;
     if (metadata.coverImage) project.coverImage = metadata.coverImage;
     if (metadata.engine) project.engine = metadata.engine;
+    if (metadata.tags) project.tags = metadata.tags;
+    if (metadata.screenshots) project.screenshots = metadata.screenshots;
     
     project.syncStatus = "synced";
     project.verified = true;

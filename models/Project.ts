@@ -25,6 +25,7 @@ const ProjectSchema = new mongoose.Schema(
     itchId: String,
     engine: String,
     tags: [String],
+    screenshots: [String],
     coverImage: String,
     verified: {
       type: Boolean,

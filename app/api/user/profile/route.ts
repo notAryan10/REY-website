@@ -15,7 +15,7 @@ export async function GET() {
 
     // EXPLICIT SELECTION of all critical fields to prevent "Ghost Record" issues
     const user = await User.findById(session.user.id).select(
-      "name email role xp eventWins projectsLed itchConnected itchUsername itchVerified itchVerificationToken achievements quests"
+      "name email role xp eventWins projectsLed itchConnected itchUsername itchVerified itchVerificationToken itchVerificationExpires achievements quests"
     );
 
     if (!user) {
