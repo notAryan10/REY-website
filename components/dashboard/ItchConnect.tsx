@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Gamepad2, Link as LinkIcon, Check, Loader2, 
@@ -33,13 +33,20 @@ export const ItchConnect = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState<"idle" | "scanning" | "success" | "error" | "needs_verify">("idle");
   const [logs, setLogs] = useState<string[]>([]);
+  const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sync state if props change (e.g. after profile refresh)
-  React.useEffect(() => {
+  // ATOMIC SYNC: Only update local state if props are defined and non-empty
+  useEffect(() => {
     if (initialConnected !== undefined) setIsConnected(initialConnected);
     if (initialVerified !== undefined) setIsVerified(initialVerified);
     if (initialUsername) setUsername(initialUsername);
-    if (verificationToken) setToken(verificationToken);
+    
+    // CRITICAL: Only overwrite local token if the incoming prop actually has a value
+    if (verificationToken && verificationToken !== token) {
+      console.log("INTERNAL_TOKEN_SYNC:", verificationToken);
+      setToken(verificationToken);
+    }
   }, [initialConnected, initialVerified, initialUsername, verificationToken]);
 
   const addLog = (msg: string) => {
@@ -47,14 +54,18 @@ export const ItchConnect = ({
   };
 
   const handleConnect = async () => {
-    // Extract username from URL if necessary
     let processedUsername = username.trim();
     if (processedUsername.includes("itch.io")) {
-      const match = processedUsername.match(/https?:\/\/(.*?)\.itch\.io/);
+      const match = processedUsername.match(/(?:https?:\/\/)?(.*?)\.itch\.io/);
       if (match) processedUsername = match[1];
+      else {
+        const profileMatch = processedUsername.match(/itch\.io\/profile\/(.*)/);
+        if (profileMatch) processedUsername = profileMatch[1];
+      }
     }
 
-    if (!processedUsername) return;
+    const finalUsername = (processedUsername || initialUsername).toLowerCase();
+    if (!finalUsername) return;
     
     setIsProcessing(true);
     setStatus("scanning");
@@ -63,9 +74,9 @@ export const ItchConnect = ({
     const sequence = [
       "INITIALIZING ITCH_NET_PROTOCOL...",
       "PINGING ITCH.IO SERVERS...",
-      `SEARCHING FOR SECTOR: ${processedUsername.toUpperCase()}`,
+      `SEARCHING FOR SECTOR: ${finalUsername.toUpperCase()}`,
       "HANDSHAKE REQUESTED...",
-      "DECRYPTING PUBLIC METADATA...",
+      "GENERATING SECURITY TOKEN...",
       "IDENTITY LOCATED."
     ];
 
@@ -78,15 +89,18 @@ export const ItchConnect = ({
       const res = await fetch("/api/user/itch/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itchUsername: processedUsername }),
+        body: JSON.stringify({ itchUsername: finalUsername }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
         setIsConnected(true);
-        setToken(data.user.itchVerificationToken);
-        setStatus("needs_verify");
+        // LOCK TOKEN INTO UI — prefer direct token field over nested user object
+        const newToken = data.token || data.user?.itchVerificationToken;
+        console.log("UI_TOKEN_LOCK_SUCCESS:", newToken);
+        setToken(newToken);
+        setStatus("idle"); 
         if (onSuccess) onSuccess();
       } else {
         setStatus("error");
@@ -145,8 +159,11 @@ export const ItchConnect = ({
   };
 
   const handleCopy = () => {
+    if (!token) return;
     navigator.clipboard.writeText(token);
-    alert("Token copied to buffer.");
+    setCopied(true);
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDisconnect = async () => {
@@ -255,13 +272,32 @@ export const ItchConnect = ({
             </div>
 
             <div className="flex gap-2">
-              <div className="flex-1 bg-black/40 border-2 border-dashed border-sand/30 p-3 font-mono text-sm text-sand text-center tracking-widest">
-                {token || "Handshake Stale"}
+              <div className={`flex-1 bg-black/40 border-2 border-dashed p-3 font-mono text-sm text-center tracking-widest ${
+                token 
+                  ? "border-sand/30 text-sand" 
+                  : "border-lava/30 text-lava/60 text-xs"
+              }`}>
+                {token || "⚠ NO TOKEN — Click Regenerate below"}
               </div>
-              <Button variant="ghost" size="sm" onClick={handleCopy} className="px-4 border-2 border-border" disabled={!token}>
-                <Copy size={14} />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleCopy} 
+                className={`px-4 border-2 transition-all ${
+                  copied 
+                    ? "border-grass text-grass" 
+                    : "border-border"
+                }`} 
+                disabled={!token}
+              >
+                {copied ? <Check size={14} /> : <Copy size={14} />}
               </Button>
             </div>
+            {copied && (
+              <p className="text-[8px] font-pixel text-grass uppercase tracking-widest text-center animate-pulse">
+                TOKEN COPIED TO CLIPBOARD
+              </p>
+            )}
 
             {status === "error" && (
               <div className="p-3 bg-lava/10 border border-lava/30 rounded-sm flex items-center gap-3 text-lava">
