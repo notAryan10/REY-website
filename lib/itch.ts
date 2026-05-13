@@ -30,13 +30,15 @@ function getItchSubdomains(username: string): string[] {
  */
 export async function fetchUserItchGames(username: string): Promise<ItchGame[]> {
   const subdomains = getItchSubdomains(username);
-  let lastError: any = null;
 
   for (const sub of subdomains) {
+    // 1. TRY RSS FEED
     try {
       const rssUrl = `https://${sub}.itch.io/games.xml`;
+      console.log(`[ITCH_RSS] Fetching: ${rssUrl}`);
       const response = await fetch(rssUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0 R.E.Y-Scanner/1.0' }
+        headers: { 'User-Agent': 'Mozilla/5.0 R.E.Y-Scanner/1.0' },
+        next: { revalidate: 60 } // Cache for 1 minute
       });
       
       if (response.ok) {
@@ -44,7 +46,7 @@ export async function fetchUserItchGames(username: string): Promise<ItchGame[]> 
         const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
         
         if (items.length > 0) {
-          return items.map(item => {
+          const games = items.map(item => {
             const title = item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/)?.[1] || 
                           item.match(/<title>(.*?)<\/title>/)?.[1] || "";
             const url = item.match(/<link>(.*?)<\/link>/)?.[1] || "";
@@ -55,20 +57,27 @@ export async function fetchUserItchGames(username: string): Promise<ItchGame[]> 
             
             return { title, url, coverImage, description };
           });
+          if (games.length > 0) return games; // RSS is highly reliable if present
         }
       }
+    } catch (error) {
+      console.error(`[ITCH_RSS] Failed for ${sub}:`, error);
+    }
 
-      // FALLBACK: HTML Scraping if RSS fails or is empty
+    // 2. FALLBACK: HTML Scraping
+    try {
       const profileUrl = `https://${sub}.itch.io`;
+      console.log(`[ITCH_SCRAPE] Fetching: ${profileUrl}`);
       const htmlResponse = await fetch(profileUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0 R.E.Y-Scanner/1.0' }
+        headers: { 'User-Agent': 'Mozilla/5.0 R.E.Y-Scanner/1.0' },
+        next: { revalidate: 60 }
       });
 
       if (htmlResponse.ok) {
         const html = await htmlResponse.text();
         const games: ItchGame[] = [];
         
-        // ULTIMATE FALLBACK: Match any div that looks like a game cell (using common IDs and classes)
+        // Match game cells
         const cellMatches = html.matchAll(/<div[^>]*data-game_id="(\d+)"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/g);
         
         for (const match of cellMatches) {
@@ -79,7 +88,6 @@ export async function fetchUserItchGames(username: string): Promise<ItchGame[]> 
                         content.match(/<div[^>]*class="game_title"[^>]*>.*?>(.*?)<\/a>/)?.[1] || "";
           
           let url = content.match(/<a[^>]*class="game_link"[^>]*href="(.*?)"/)?.[1] || "";
-          // Relative URL fix
           if (url && !url.startsWith("http")) {
             url = `https://${sub}.itch.io${url.startsWith("/") ? "" : "/"}${url}`;
           }
@@ -101,7 +109,7 @@ export async function fetchUserItchGames(username: string): Promise<ItchGame[]> 
           }
         }
 
-        // SECONDARY FALLBACK: Match anything with game_title if data-game_id failed
+        // Secondary fallback for titles
         if (games.length === 0) {
           const titleMatches = html.matchAll(/<div[^>]*class="game_title"[^>]*>.*?<a[^>]*href="(.*?)"[^>]*>(.*?)<\/a>/g);
           for (const match of titleMatches) {
@@ -119,11 +127,10 @@ export async function fetchUserItchGames(username: string): Promise<ItchGame[]> 
         if (games.length > 0) return games;
       }
     } catch (error) {
-      lastError = error;
+      console.error(`[ITCH_SCRAPE] Failed for ${sub}:`, error);
     }
   }
 
-  console.error("Error fetching Itch.io games for subdomains:", subdomains, lastError);
   return [];
 }
 
@@ -147,14 +154,14 @@ export async function fetchItchProjectMetadata(url: string): Promise<Partial<Itc
                        html.match(/<img class="header_image" src="(.*?)"/)?.[1] || "";
     const description = html.match(/<meta property="og:description" content="(.*?)"/)?.[1] || "";
     
-    // Extract tags (usually in .game_info_panel or as specific meta tags)
+    // Extract tags
     const tags: string[] = [];
     const tagMatches = html.matchAll(/<a href="https:\/\/itch\.io\/games\/tag-(.*?)">(.*?)<\/a>/g);
     for (const match of tagMatches) {
       if (match[2] && !tags.includes(match[2])) tags.push(match[2]);
     }
 
-    // Try to detect engine from common tags in description or meta tags
+    // Engine detection
     let engine = "Other";
     const lowerHtml = html.toLowerCase();
     if (lowerHtml.includes("unity")) engine = "Unity";

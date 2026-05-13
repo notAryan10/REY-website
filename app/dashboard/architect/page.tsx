@@ -25,7 +25,8 @@ import {
   RefreshCw,
   ChevronRight,
   UserPlus,
-  UserMinus
+  UserMinus,
+  Rocket
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
@@ -156,6 +157,12 @@ export default function ArchitectConsole() {
               onClick={() => setActiveSection("Achievements")} 
               icon={<Trophy size={18} />} 
               label="Achievements" 
+            />
+            <NavItem 
+              active={activeSection === "App Deployment"} 
+              onClick={() => setActiveSection("App Deployment")} 
+              icon={<Rocket size={18} />} 
+              label="App Deployment" 
             />
             {session.user.role === "Founder" && (
               <NavItem 
@@ -337,7 +344,7 @@ function NavItem({ active, onClick, icon, label }: { active: boolean, onClick: (
 }
 
 function OverviewSection({ users, achievements }: { users: User[], achievements: Achievement[] }) {
-  const totalXP = users.reduce((acc, u) => acc + (u.xp || 0), 0);
+  const totalXP = Math.floor(users.reduce((acc, u) => acc + (u.xp || 0), 0));
   const activeAdmins = users.filter(u => ["Founder", "Core Architect", "Moderator"].includes(u.role)).length;
 
   return (
@@ -611,7 +618,7 @@ function UserCard({ user, onStatusChange, onDelete }: { user: User, onStatusChan
       <div className="space-y-4 mb-6">
         <div className="flex justify-between items-end">
           <span className="text-[10px] font-pixel text-text-secondary">LEVEL {level}</span>
-          <span className="text-[9px] font-pixel text-white/60">{user.xp || 0} XP</span>
+          <span className="text-[9px] font-pixel text-white/60">{Math.floor(user.xp || 0)} XP</span>
         </div>
         <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
           <motion.div 
@@ -728,7 +735,7 @@ function XPControlSection({ users, fetchData, showStatus, session }: { users: Us
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-pixel text-architect-blue">{user.xp || 0} XP</p>
+                <p className="text-[10px] font-pixel text-architect-blue">{Math.floor(user.xp || 0)} XP</p>
                 <p className="text-[8px] font-pixel text-text-secondary">LVL {calculateLevel(user.xp || 0).level}</p>
               </div>
             </button>
@@ -747,7 +754,7 @@ function XPControlSection({ users, fetchData, showStatus, session }: { users: Us
             <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
               <p className="text-[10px] font-pixel text-text-secondary mb-2">TARGET LOCKED</p>
               <p className="text-sm font-bold text-architect-orange">{selectedUser.name}</p>
-              <p className="text-xs text-text-secondary mt-1 uppercase font-pixel tracking-tighter">Current Status: {selectedUser.xp || 0} XP / Level {calculateLevel(selectedUser.xp || 0).level}</p>
+              <p className="text-xs text-text-secondary mt-1 uppercase font-pixel tracking-tighter">Current Status: {Math.floor(selectedUser.xp || 0)} XP / Level {calculateLevel(selectedUser.xp || 0).level}</p>
             </div>
 
             <div className="space-y-4">
@@ -1177,3 +1184,4 @@ function SystemLogsSection() {
     </Card>
   );
 }
+

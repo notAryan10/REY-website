@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 import { getUserFromSession } from "@/lib/auth";
@@ -9,7 +9,7 @@ const verifyAttempts = new Map<string, { count: number, lastReset: number }>();
 const RATE_LIMIT_WINDOW = 10 * 60 * 1000; // 10 minutes
 const MAX_ATTEMPTS = 5;
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const session = await getUserFromSession();
     if (!session || !session.user?.email) {
@@ -80,7 +80,6 @@ export async function POST(req: NextRequest) {
 
     let verified = false;
     const tokenToMatch = user.itchVerificationToken.toUpperCase();
-    let lastCommsError = "";
 
     // Iterate through all potential profile sectors
     for (const target of scanTargets) {
@@ -108,7 +107,6 @@ export async function POST(req: NextRequest) {
         }
       } catch (err) {
         console.error("Fetch failed for target:", target, err);
-        lastCommsError = "COMMS_FAILURE: Sector unreachable.";
       }
     }
 

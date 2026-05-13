@@ -2,16 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { 
   Gamepad2, 
-  Search, 
   Check, 
   Loader2, 
   ArrowRight, 
   ShieldCheck, 
   Terminal,
-  AlertCircle,
-  Plus
+  AlertCircle
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -25,7 +24,6 @@ interface ItchImportProps {
 
 export const ItchImport = ({ onImportComplete, onCancel }: ItchImportProps) => {
   const [games, setGames] = useState<ItchGame[]>([]);
-  const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<"idle" | "scanning" | "list" | "importing" | "success" | "error">("idle");
   const [logs, setLogs] = useState<string[]>([]);
   const [selectedGame, setSelectedGame] = useState<ItchGame | null>(null);
@@ -34,8 +32,7 @@ export const ItchImport = ({ onImportComplete, onCancel }: ItchImportProps) => {
     setLogs(prev => [...prev, `> ${msg}`].slice(-5));
   };
 
-  const fetchGames = async () => {
-    setLoading(true);
+  const fetchGames = React.useCallback(async () => {
     setStatus("scanning");
     setLogs([]);
 
@@ -54,31 +51,41 @@ export const ItchImport = ({ onImportComplete, onCancel }: ItchImportProps) => {
 
     try {
       const res = await fetch("/api/user/itch/fetch");
-      const data = await res.json();
       
       if (res.ok) {
+        const data = await res.json();
         setGames(data);
         setStatus("list");
       } else {
+        const errorText = await res.text();
+        let errorMessage = "UNKNOWN_SYSTEM_FAILURE";
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch {
+          errorMessage = `${res.status} ${res.statusText}`;
+        }
+        
         setStatus("error");
-        addLog(`ERROR: ${data.error || "UNKNOWN_SYSTEM_FAILURE"}`);
+        addLog(`ERROR: ${errorMessage}`);
       }
     } catch (err) {
       console.error(err);
       setStatus("error");
-    } finally {
-      setLoading(false);
+      addLog(`ERROR: ${err instanceof Error ? err.message : "FETCH_EXCEPTION"}`);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchGames();
-  }, []);
+    const init = async () => {
+      await fetchGames();
+    };
+    init();
+  }, [fetchGames]);
 
   const handleImport = async () => {
     if (!selectedGame) return;
 
-    setLoading(true);
     setStatus("importing");
     
     try {
@@ -109,8 +116,6 @@ export const ItchImport = ({ onImportComplete, onCancel }: ItchImportProps) => {
     } catch (err) {
       console.error(err);
       setStatus("error");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -178,9 +183,9 @@ export const ItchImport = ({ onImportComplete, onCancel }: ItchImportProps) => {
                         : "border-border/40 bg-white/5 hover:border-border"
                     }`}
                   >
-                    <div className="w-16 h-12 bg-black border border-white/10 overflow-hidden flex-shrink-0">
+                    <div className="w-16 h-12 bg-black border border-white/10 overflow-hidden flex-shrink-0 relative">
                       {game.coverImage ? (
-                        <img src={game.coverImage} alt={game.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                        <Image src={game.coverImage} alt={game.title} width={64} height={48} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" unoptimized />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <Gamepad2 size={16} className="text-white/20" />
@@ -269,21 +274,31 @@ export const ItchImport = ({ onImportComplete, onCancel }: ItchImportProps) => {
                 <AlertCircle size={32} />
               </div>
               <div className="space-y-2">
-                <p className="text-[10px] font-pixel text-white uppercase">
-                  {logs.some(l => l.includes("PROFILE_NOT_LINKED")) ? "Identity Not Found" : "Critical System Failure"}
+                <p className="text-[10px] font-pixel text-white uppercase px-6">
+                  {logs.some(l => l.includes("PROFILE_NOT_LINKED") || l.includes("PROTOCOL_ERROR")) ? "Identity Not Found" : "Critical System Failure"}
                 </p>
-                <p className="text-[8px] font-pixel text-text-secondary">
-                  {logs.some(l => l.includes("PROFILE_NOT_LINKED")) 
+                <div className="text-[8px] font-pixel text-text-secondary px-8 leading-relaxed">
+                  {logs.some(l => l.includes("PROFILE_NOT_LINKED") || l.includes("PROTOCOL_ERROR")) 
                     ? "Your Itch.io profile must be synchronized in the dashboard before importing." 
-                    : "Check network connection or Itch profile synchronization."}
-                </p>
+                    : (
+                      <div className="space-y-1">
+                        <p>An unexpected error occurred during the synchronization handshake.</p>
+                        <p className="text-lava/80 font-mono mt-2">{logs[logs.length - 1]?.replace("> ", "") || "ERR_CONNECTION_FAILED"}</p>
+                      </div>
+                    )}
+                </div>
               </div>
-              {logs.some(l => l.includes("PROFILE_NOT_LINKED")) ? (
+              {logs.some(l => l.includes("PROFILE_NOT_LINKED") || l.includes("PROTOCOL_ERROR")) ? (
                 <Button variant="sky" size="sm" onClick={() => window.location.href = "/dashboard"}>
                   GO TO DASHBOARD
                 </Button>
               ) : (
-                <Button variant="lava" size="sm" onClick={() => setStatus("idle")}>RETRY_HANDSHAKE</Button>
+                <div className="flex flex-col items-center gap-4">
+                  <Button variant="lava" size="sm" onClick={() => setStatus("idle")}>RETRY_HANDSHAKE</Button>
+                  <button onClick={onCancel} className="text-[8px] font-pixel text-text-secondary hover:text-white transition-colors">
+                    [ EXIT_PROTOCOL ]
+                  </button>
+                </div>
               )}
             </motion.div>
           )}

@@ -97,9 +97,10 @@ export interface IProject {
   accent: "lava" | "sky" | "grass" | "sand";
   tag: string;
   uploadedBy: {
+    _id: string;
     name: string;
     role: string;
-  };
+  } | string;
   likes: string[];
   commentCount?: number;
   createdAt: string | Date;

@@ -13,7 +13,10 @@ export async function DELETE() {
 
     await dbConnect();
 
-    const deletedUser = await User.findOneAndDelete({ email: session.user.email });
+    let deletedUser = await User.findByIdAndDelete(session.user.id);
+    if (!deletedUser) {
+      deletedUser = await User.findOneAndDelete({ email: session.user.email });
+    }
 
     if (!deletedUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });

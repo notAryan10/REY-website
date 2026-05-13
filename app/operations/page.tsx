@@ -20,7 +20,7 @@ import { ActivityFeed } from "@/components/operations/ActivityFeed";
 import { IUserQuest, IStreak } from "@/types";
 
 export default function OperationsPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [quests, setQuests] = useState<IUserQuest[]>([]);
   const [streak, setStreak] = useState<IStreak | null>(null);
   const [loading, setLoading] = useState(true);

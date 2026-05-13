@@ -60,7 +60,7 @@ export function LeaderboardCard() {
               </div>
               
               <div className="text-right">
-                <p className="text-lg font-pixel">{user.xp}</p>
+                <p className="text-lg font-pixel">{Math.floor(user.xp || 0)}</p>
                 <p className="text-[8px] uppercase font-pixel opacity-40">Cumulative XP</p>
               </div>
             </motion.div>

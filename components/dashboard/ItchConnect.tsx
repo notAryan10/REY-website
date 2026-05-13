@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Gamepad2, Link as LinkIcon, Check, Loader2, 
-  Terminal, AlertCircle, Copy, ExternalLink, ShieldCheck 
+  Terminal, AlertCircle, Copy, ShieldCheck 
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -45,7 +45,7 @@ export const ItchConnect = ({
     if (initialVerified !== undefined) setIsVerified(initialVerified);
     if (initialUsername) setUsername(initialUsername);
     if (verificationToken && verificationToken !== token) setToken(verificationToken);
-  }, [initialConnected, initialVerified, initialUsername, verificationToken]);
+  }, [initialConnected, initialVerified, initialUsername, verificationToken, token]);
 
   // Countdown logic for expiration
   useEffect(() => {
@@ -74,7 +74,7 @@ export const ItchConnect = ({
   };
 
   const handleConnect = async () => {
-    let processedUsername = username.trim();
+    const processedUsername = username.trim();
     // ... same extraction logic ...
     const finalUsername = (processedUsername || initialUsername).toLowerCase().replace(/_/g, "-").replace(/[^a-zA-Z0-9-]/g, "");
     if (!finalUsername) return;
@@ -119,7 +119,7 @@ export const ItchConnect = ({
         setStatus("error");
         addLog(`ERROR: ${data.error || "PROTOCOL REJECTED"}`);
       }
-    } catch (err) {
+    } catch {
       setStatus("error");
       addLog("ERROR: SYSTEM TIMEOUT.");
     } finally {
@@ -165,7 +165,7 @@ export const ItchConnect = ({
         addLog(`ERROR: ${data.error || "HANDSHAKE FAILED"}`);
         if (data.details) addLog(`INFO: ${data.details}`);
       }
-    } catch (err) {
+    } catch {
       setStatus("error");
       addLog("ERROR: VERIFICATION TIMEOUT.");
     } finally {
@@ -421,3 +421,4 @@ export const ItchConnect = ({
     </Card>
   );
 };
+

@@ -45,10 +45,12 @@ export const ProjectCard = ({ project: initialProject }: ProjectCardProps) => {
   const [replyContent, setReplyContent] = React.useState("");
 
   const isAdmin = ["Founder", "Core Architect", "Moderator"].includes(session?.user?.role || "");
-  const isOwner = session?.user?.id === (project.uploadedBy as any)?._id || session?.user?.id === (project.uploadedBy as any);
+  const isOwner = typeof project.uploadedBy === 'string' 
+    ? session?.user?.id === project.uploadedBy 
+    : session?.user?.id === project.uploadedBy._id;
 
-  const creatorName = (project.uploadedBy as any)?.name || "Architect";
-  const creatorRole = (project.uploadedBy as any)?.role || "Member";
+  const creatorName = typeof project.uploadedBy === 'object' ? project.uploadedBy.name : "Architect";
+  const creatorRole = typeof project.uploadedBy === 'object' ? project.uploadedBy.role : "Member";
 
   const fetchComments = useCallback(async () => {
     setLoadingComments(true);

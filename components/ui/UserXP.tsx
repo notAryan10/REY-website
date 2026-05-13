@@ -26,7 +26,7 @@ export const UserXP = ({ xp, level, nextLevelXp, showDetails = false }: UserXPPr
         </div>
         {showDetails && (
           <span className="font-pixel text-[7px] uppercase text-text-secondary opacity-60">
-            {xp}/{nextLevelXp}
+            {Math.floor(xp)}/{nextLevelXp}
           </span>
         )}
       </div>

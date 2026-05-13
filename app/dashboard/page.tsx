@@ -188,17 +188,17 @@ export default function DashboardPage() {
                       onSuccess={fetchProfile}
                     />
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                      <Card className="text-center space-y-2 border-border/50 group flex flex-col justify-center">
-                        <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary group-hover:text-white transition-colors">Event Wins</p>
-                        <p className="text-2xl font-pixel text-white">{eventWins.toString().padStart(2, '0')}</p>
+                      <Card className="text-center px-2 py-6 space-y-2 border-border/50 group flex flex-col justify-center overflow-visible">
+                        <p className="text-[9px] uppercase font-pixel tracking-wide text-text-secondary group-hover:text-white transition-colors">Event Wins</p>
+                        <p className="text-xl font-pixel text-white">{eventWins.toString().padStart(2, '0')}</p>
                       </Card>
-                      <Card className="text-center space-y-2 border-border/50 group flex flex-col justify-center">
-                        <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary group-hover:text-white transition-colors">Artifacts Led</p>
-                        <p className="text-2xl font-pixel text-white">{projectsLed.toString().padStart(2, '0')}</p>
+                      <Card className="text-center px-2 py-6 space-y-2 border-border/50 group flex flex-col justify-center overflow-visible">
+                        <p className="text-[9px] uppercase font-pixel tracking-wide text-text-secondary group-hover:text-white transition-colors">Artifacts Led</p>
+                        <p className="text-xl font-pixel text-white">{projectsLed.toString().padStart(2, '0')}</p>
                       </Card>
-                      <Card className="text-center space-y-2 border-border/50 group flex flex-col justify-center">
-                        <p className="text-[10px] uppercase font-pixel tracking-widest text-text-secondary group-hover:text-white transition-colors">Club XP</p>
-                        <p className="text-2xl font-pixel text-white">{xp >= 1000 ? `${(xp / 1000).toFixed(1)}K` : xp}</p>
+                      <Card className="text-center px-2 py-6 space-y-2 border-border/50 group flex flex-col justify-center overflow-visible">
+                        <p className="text-[9px] uppercase font-pixel tracking-wide text-text-secondary group-hover:text-white transition-colors">Club XP</p>
+                        <p className="text-xl font-pixel text-white">{xp >= 1000 ? `${(xp / 1000).toFixed(1)}K` : Math.floor(xp).toString().padStart(2, '0')}</p>
                       </Card>
                     </div>
                  </div>

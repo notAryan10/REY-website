@@ -70,7 +70,11 @@ export async function POST(req: NextRequest) {
     }
     
     // Check if user is itch verified
-    const user = await User.findOne({ email: session.user.email });
+    let user = await User.findById(session.user.id);
+    if (!user) {
+      user = await User.findOne({ email: session.user.email });
+    }
+    
     const canBeVerified = user && user.itchVerified && source === "itch";
     
     let xpToAdd = 50; // Base XP for project upload
