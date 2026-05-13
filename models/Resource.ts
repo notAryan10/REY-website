@@ -34,4 +34,8 @@ const ResourceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes for faster queries
+ResourceSchema.index({ accessLevel: 1, createdAt: -1 });
+ResourceSchema.index({ eventId: 1 });
+
 export default mongoose.models.Resource || mongoose.model("Resource", ResourceSchema);

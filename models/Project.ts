@@ -78,4 +78,10 @@ const ProjectSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes for faster queries
+ProjectSchema.index({ status: 1, createdAt: -1 });
+ProjectSchema.index({ uploadedBy: 1 });
+ProjectSchema.index({ featured: 1 });
+ProjectSchema.index({ itchIoUrl: 1 }, { unique: true, sparse: true });
+
 export default mongoose.models.Project || mongoose.model("Project", ProjectSchema);

@@ -15,9 +15,10 @@ interface StatsOverviewProps {
   quests: IUserQuest[];
   streak: IStreak | null;
   loading: boolean;
+  onReset?: () => void;
 }
 
-export function StatsOverview({ quests, streak, loading }: StatsOverviewProps) {
+export function StatsOverview({ quests, streak, loading, onReset }: StatsOverviewProps) {
   const [timeLeft, setTimeLeft] = useState("");
 
   useEffect(() => {
@@ -27,6 +28,12 @@ export function StatsOverview({ quests, streak, loading }: StatsOverviewProps) {
       tomorrow.setHours(24, 0, 0, 0);
       
       const diff = tomorrow.getTime() - now.getTime();
+      
+      if (diff <= 0) {
+        if (onReset) onReset();
+        return;
+      }
+
       const hours = Math.floor(diff / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
@@ -35,7 +42,7 @@ export function StatsOverview({ quests, streak, loading }: StatsOverviewProps) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [onReset]);
 
   const completedQuests = quests.filter(q => q.completed && q.questId);
   const completedCount = completedQuests.length;

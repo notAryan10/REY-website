@@ -48,4 +48,9 @@ const EventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes for faster queries
+EventSchema.index({ date: 1 });
+EventSchema.index({ isPublic: 1 });
+EventSchema.index({ type: 1 });
+
 export default mongoose.models.Event || mongoose.model("Event", EventSchema);

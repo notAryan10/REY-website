@@ -29,7 +29,19 @@ export async function GET() {
       })
       .sort({ createdAt: -1 });
 
-    // If no quests found, assign some initial ones (fallback for new users)
+    // Lazy Reset: Check if existing quests are from a previous day
+    if (userQuests.length > 0) {
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const firstQuestDate = new Date(userQuests[0].createdAt);
+      
+      if (firstQuestDate < startOfToday) {
+        await UserQuest.deleteMany({ userId: user._id });
+        userQuests = [];
+      }
+    }
+
+    // If no quests found, assign some initial ones (fallback for new users or after reset)
     if (userQuests.length === 0) {
       const availableQuests = await mongoose.model("Quest").find({ isActive: true });
       if (availableQuests.length > 0) {

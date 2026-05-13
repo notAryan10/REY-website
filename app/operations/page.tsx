@@ -137,6 +137,7 @@ export default function OperationsPage() {
               quests={quests} 
               streak={streak} 
               loading={loading} 
+              onReset={fetchData}
             />
 
             {/* Category Navigation */}
