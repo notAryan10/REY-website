@@ -11,6 +11,7 @@ import { ScrollReveal } from "@/components/layout/ScrollReveal";
 import { EventManagementModal } from "@/components/events/EventManagementModal";
 import { useSession } from "next-auth/react";
 import { IEvent } from "@/types";
+import { formatDate, formatFullDate } from "@/lib/format";
 
 export default function GameJamsPage() {
   const { data: session } = useSession();
@@ -71,7 +72,7 @@ export default function GameJamsPage() {
                       <div className="flex items-center justify-between">
                         <Badge variant="grass">{jam.type}</Badge>
                         <span className="text-[10px] font-pixel text-text-secondary uppercase">
-                          Starts {new Date(jam.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          Starts {formatDate(jam.date)}
                         </span>
                       </div>
                       
@@ -94,12 +95,7 @@ export default function GameJamsPage() {
 
                       {jam.submissionDate && (
                         <div className="mt-4 p-2 bg-grass/10 border border-grass/20 rounded text-[10px] font-pixel text-grass/80">
-                          Deadline: {new Date(jam.submissionDate).toLocaleString(undefined, { 
-                            month: 'short', 
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                          Deadline: {formatFullDate(jam.submissionDate)}
                         </div>
                       )}
                     </div>

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { motion, AnimatePresence } from "framer-motion";
 import { IProject } from "@/types";
+import { formatDate, formatTime } from "@/lib/format";
 
 interface ProjectCardProps {
   project: IProject;
@@ -187,7 +188,7 @@ export const ProjectCard = ({ project: initialProject }: ProjectCardProps) => {
               </Badge>
             </div>
             <span className="text-[8px] font-pixel text-text-secondary uppercase opacity-40">
-              {new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {formatTime(comment.createdAt)}
             </span>
           </div>
           
@@ -273,7 +274,7 @@ export const ProjectCard = ({ project: initialProject }: ProjectCardProps) => {
             {project.title}
           </h4>
           <span className="text-[8px] font-pixel text-text-secondary uppercase opacity-50 whitespace-nowrap ml-2">
-            {new Date(project.createdAt).toLocaleDateString()}
+            {formatDate(project.createdAt)}
           </span>
         </div>
         

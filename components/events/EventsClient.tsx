@@ -12,6 +12,7 @@ import { ScrollReveal } from "@/components/layout/ScrollReveal";
 import { EventManagementModal } from "@/components/events/EventManagementModal";
 import { EventViewModal } from "@/components/events/EventViewModal";
 import { IEvent } from "@/types";
+import { formatFullDate } from "@/lib/format";
 
 interface EventsClientProps {
   initialEvents: IEvent[];
@@ -63,13 +64,7 @@ export function EventsClient({ initialEvents }: EventsClientProps) {
                       <div className="flex items-center justify-between">
                         <Badge variant={event.accent || "lava"}>{event.type}</Badge>
                         <span className="text-[10px] font-pixel text-text-secondary uppercase">
-                          {new Date(event.date).toLocaleDateString(undefined, { 
-                            weekday: 'short',
-                            month: 'short', 
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                          {formatFullDate(event.date)}
                         </span>
                       </div>
                       
@@ -88,12 +83,7 @@ export function EventsClient({ initialEvents }: EventsClientProps) {
                         </div>
                         {event.submissionDate && (
                           <div className="flex items-center gap-2 text-[10px] uppercase font-pixel tracking-widest text-lava animate-pulse">
-                            <Calendar size={12} /> Ends: {new Date(event.submissionDate).toLocaleString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                            <Calendar size={12} /> Ends: {formatFullDate(event.submissionDate)}
                           </div>
                         )}
                       </div>

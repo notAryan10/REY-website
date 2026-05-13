@@ -14,6 +14,7 @@ import { IEvent, IProject, IResource } from "@/types";
 
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 import dynamic from "next/dynamic";
+import { formatDate } from "@/lib/format";
 
 const FallingText = dynamic(() => import("@/components/ui/FallingText"), {
   ssr: false,
@@ -102,7 +103,7 @@ export function HomeClient({ latestEvent, latestProject, latestResource }: HomeC
                       <Badge variant={latestEvent?.accent || "lava"} icon={<Calendar size={10} />}>{latestEvent ? "Upcoming Event" : "Standby"}</Badge>
                       <h3 className="text-xl uppercase truncate">{latestEvent?.title || "No Events Scheduled"}</h3>
                       <p className="text-text-secondary text-sm font-sans line-clamp-2">
-                        {latestEvent ? `Join us on ${new Date(latestEvent.date).toLocaleDateString()} at ${latestEvent.location}.` : "Stay tuned for the next community gathering."}
+                        {latestEvent ? `Join us on ${formatDate(latestEvent.date)} at ${latestEvent.location}.` : "Stay tuned for the next community gathering."}
                       </p>
                       <Link href="/events">
                         <Button variant="ghost" size="sm" className="p-0 hover:bg-transparent text-text-secondary hover:text-white transition-colors">See All Events →</Button>

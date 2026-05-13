@@ -15,6 +15,7 @@ import { ScrollReveal } from "@/components/layout/ScrollReveal";
 
 import { EventManagementModal } from "@/components/events/EventManagementModal";
 import { IEvent } from "@/types";
+import { formatDate } from "@/lib/format";
 
 export default function WorkshopsPage() {
   const { data: session, status } = useSession();
@@ -147,7 +148,7 @@ export default function WorkshopsPage() {
                       <div className="flex items-center justify-between">
                         <Badge variant={workshop.accent || "sky"}>Workshop</Badge>
                         <span className="text-[10px] font-pixel text-text-secondary uppercase">
-                          {workshop.date ? new Date(workshop.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'TBA'}
+                          {workshop.date ? formatDate(workshop.date) : 'TBA'}
                         </span>
                       </div>
                       

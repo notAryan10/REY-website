@@ -36,10 +36,11 @@ import { Badge } from "@/components/ui/Badge";
 import { calculateLevel } from "@/lib/xp";
 import { User, Achievement, Log, UserAchievement } from "@/types";
 import { Session } from "next-auth";
+import { formatTime, formatNumber } from "@/lib/format";
 
 import { socket } from "@/lib/socket";
 
-type Section = "Overview" | "Members" | "XP Control" | "Achievements" | "Admin Management" | "System Logs";
+type Section = "Overview" | "Members" | "XP Control" | "Achievements" | "Admin Management" | "System Logs" | "App Deployment";
 
 export default function ArchitectConsole() {
   const { data: session } = useSession();
@@ -359,7 +360,7 @@ function OverviewSection({ users, achievements }: { users: User[], achievements:
         />
         <StatCard 
           title="Energy (XP) Output" 
-          value={totalXP.toLocaleString()} 
+          value={formatNumber(totalXP)} 
           icon={<Zap size={24} />} 
           accent="orange" 
           trend="+5.4k Today"
@@ -1161,7 +1162,7 @@ function SystemLogsSection() {
                   className="grid grid-cols-5 gap-4 py-3 hover:bg-white/5 transition-colors border-b border-white/5 items-center group"
                 >
                   <span className="text-[10px] text-architect-blue font-pixel">
-                    {new Date(log.createdAt).toLocaleTimeString()}
+                    {formatTime(log.createdAt)}
                   </span>
                   <span className="text-[10px] text-white font-pixel truncate">{log.action}</span>
                   <span className="text-[10px] text-text-secondary font-mono truncate">

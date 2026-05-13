@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 
 import { IEvent } from "@/types";
+import { formatFullDate } from "@/lib/format";
 
 interface EventViewModalProps {
   event: IEvent;
@@ -71,9 +72,7 @@ export function EventViewModal({ event: initialEvent, onClose }: EventViewModalP
               <div className="flex flex-wrap gap-6 pt-2">
                 <div className="flex items-center gap-2 text-[10px] uppercase font-pixel tracking-widest text-text-secondary">
                   <Calendar size={14} className={`text-${event.accent || "lava"}`} /> 
-                  {new Date(event.date).toLocaleDateString(undefined, { 
-                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-                  })}
+                  {formatFullDate(event.date)}
                 </div>
                 <div className="flex items-center gap-2 text-[10px] uppercase font-pixel tracking-widest text-text-secondary">
                   <MapPin size={14} className={`text-${event.accent || "lava"}`} /> {event.location || "Club HQ"}
@@ -106,14 +105,7 @@ export function EventViewModal({ event: initialEvent, onClose }: EventViewModalP
                           )}
                         </div>
                         <p className="text-sm text-white font-sans">
-                          Submissions {new Date(event.submissionDate) < new Date() ? 'closed' : 'close'} on {new Date(event.submissionDate).toLocaleString(undefined, {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                          Submissions {new Date(event.submissionDate) < new Date() ? 'closed' : 'close'} on {formatFullDate(event.submissionDate)}
                         </p>
                       </div>
                       <Calendar className={new Date(event.submissionDate) < new Date() ? 'text-text-secondary' : 'text-lava'} size={24} />
