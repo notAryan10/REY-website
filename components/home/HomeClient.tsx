@@ -61,7 +61,7 @@ export function HomeClient({ latestEvent, latestProject, latestResource }: HomeC
           <ScrollReveal direction="up">
             <div className="flex flex-col items-center text-center space-y-8 max-w-4xl mx-auto relative z-10">
               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}>
-                <h1 className="text-6xl md:text-9xl !leading-[0.8] text-white mb-4 uppercase tracking-tighter font-pixel drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">R.E.Y</h1>
+                <h1 className="glitch text-6xl md:text-9xl !leading-[0.8] text-white mb-4 uppercase tracking-tighter font-pixel drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]" data-text="R.E.Y">R.E.Y</h1>
                 <p className="text-grass font-pixel text-[10px] md:text-xs uppercase tracking-[0.3em] mb-8">Explore • Create • Level Up</p>
                 <p className="text-text-secondary text-lg md:text-xl max-w-xl mx-auto leading-relaxed font-sans">The ultimate destination for digital architects and competitive pioneers.</p>
               </motion.div>

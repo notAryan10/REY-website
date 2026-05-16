@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { AchievementPopup } from "@/components/ui/AchievementPopup";
+import CustomCursor from "@/components/ui/CustomCursor";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -38,6 +39,11 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${pixel.variable} h-full antialiased dark`}>
       <body className="min-h-full flex flex-col bg-background text-text-primary overflow-x-hidden">
         <SessionProvider>
+          <CustomCursor />
+          {/* Retro Filter Layers */}
+          <div className="retro-overlay" />
+          <div className="retro-vignette" />
+          <div className="retro-flicker" />
           <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[100] bg-[url('/textures/dark-matter.png')]" />
           
           <Navbar />
