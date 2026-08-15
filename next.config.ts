@@ -9,12 +9,17 @@ const nextConfig: NextConfig = {
     if (!BACKEND_URL) return [];
     return {
       // beforeFiles, so these win over the app/api/* routes still in this repo.
-      // /api/auth/* is excluded: middleware (proxy.ts) and the server components
-      // in app/ verify the session on Vercel, so proxying auth would add a hop
-      // to every request without moving anything off Vercel.
+      //
+      // Exclusions stay on Vercel:
+      //   auth/           - middleware (proxy.ts) and the server components in
+      //                     app/ verify the session here anyway, so proxying it
+      //                     would add a hop without moving work off Vercel.
+      //   forgot-password - sends mail. Render's free tier blocks outbound SMTP
+      //   register        - (ports 25/465/587), so the mailer hangs there until
+      //                     the socket times out. Vercel has no such block.
       beforeFiles: [
         {
-          source: "/api/:path((?!auth/).*)",
+          source: "/api/:path((?!auth/|forgot-password|register).*)",
           destination: `${BACKEND_URL}/api/:path`,
         },
       ],

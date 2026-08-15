@@ -13,6 +13,11 @@ export const sendEmail = async (options: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
+    // Without these a blocked SMTP port leaves the request hanging until the OS
+    // gives up minutes later, which reads to the user as a frozen button.
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
   });
 
   const mailOptions = {
