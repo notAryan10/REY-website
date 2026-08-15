@@ -21,11 +21,9 @@ export function requireRole(session: Session | null, allowedRoles: string[]) {
   }
 }
 
-export function hasPermission(session: Session | null, permission: string) {
-  if (!session || !session.user) return false;
-  if (session.user.role === "Founder") return true;
-  return session.user.permissions?.includes(permission) || session.user.permissions?.includes("FULL_ACCESS");
-}
+// Authorization logic lives in lib/permissions.ts so it stays unit-testable.
+// Re-exported here because routes already import it from this module.
+export { hasPermission, canManageEvents } from "@/lib/permissions";
 
 export async function getUserFromSession() {
   return await getServerSession(authOptions);

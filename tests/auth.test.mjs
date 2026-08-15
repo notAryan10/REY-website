@@ -53,6 +53,30 @@ assert.equal(verifyRoleCookie("Founder." + signed.split(".")[1]), null, "staff r
 assert.equal(verifyRoleCookie(signed.slice(0, -1) + "0"), null, "tampered signature must be rejected");
 assert.equal(verifyRoleCookie(undefined), null);
 
+// --- event management authorization ---
+const { hasPermission, canManageEvents } = await import("../lib/permissions.ts");
+const sess = (role, permissions) => ({ user: { role, permissions } });
+
+// A Moderator granted MANAGE_EVENTS can now actually manage events — before
+// this was wired up the grant was decorative.
+assert.equal(canManageEvents(sess("Moderator", ["MODERATE_COMMUNITY", "MANAGE_EVENTS"])), true);
+assert.equal(canManageEvents(sess("Moderator", ["MODERATE_COMMUNITY"])), false, "no grant, no access");
+
+// Nobody who could manage events before loses access.
+assert.equal(canManageEvents(sess("Founder", [])), true, "Founder bypasses permissions");
+assert.equal(canManageEvents(sess("Core Architect", ["FULL_ACCESS"])), true, "FULL_ACCESS is a wildcard");
+assert.equal(canManageEvents(sess("architect", undefined)), true, "member rank matches by role only");
+
+// And ordinary members still can't.
+assert.equal(canManageEvents(sess("spectator", [])), false);
+assert.equal(canManageEvents(sess("respawner", [])), false);
+assert.equal(canManageEvents(null), false);
+
+assert.equal(hasPermission(null, "MODIFY_XP"), false);
+assert.equal(hasPermission(sess("Moderator", undefined), "MODIFY_XP"), false, "missing permissions array");
+assert.equal(hasPermission(sess("Moderator", ["MODIFY_XP"]), "MODIFY_XP"), true);
+assert.equal(hasPermission(sess("Moderator", ["MODIFY_XP"]), "DELETE_CONTENT"), false);
+
 // --- email template escaping ---
 const { emailLayout } = await import("../lib/mail.ts");
 const mail = emailLayout({

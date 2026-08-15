@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Event from "@/models/Event";
-import { getUserFromSession, requireRole } from "@/lib/auth";
+import { getUserFromSession, canManageEvents } from "@/lib/auth";
 
 export async function GET(
   req: NextRequest,
@@ -45,9 +45,7 @@ export async function DELETE(
     const { id } = await params;
     const session = await getUserFromSession();
 
-    try {
-      requireRole(session, ["Founder", "Core Architect", "architect"]);
-    } catch {
+    if (!canManageEvents(session)) {
       return NextResponse.json({ error: "Forbidden: Elevated Clearance Required" }, { status: 403 });
     }
 
@@ -76,9 +74,7 @@ export async function PATCH(
     const { id } = await params;
     const session = await getUserFromSession();
 
-    try {
-      requireRole(session, ["Founder", "Core Architect", "architect"]);
-    } catch {
+    if (!canManageEvents(session)) {
       return NextResponse.json({ error: "Forbidden: Elevated Clearance Required" }, { status: 403 });
     }
 
