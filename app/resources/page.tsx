@@ -6,7 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "Data Vault — REY Community",
+  title: "Data Vault",
   description: "Access community resources, textures, blueprints, and classified assets for digital architects.",
 };
 

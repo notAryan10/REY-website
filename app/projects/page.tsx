@@ -8,7 +8,7 @@ import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 
 export const metadata: Metadata = {
-  title: "Build Repository — REY Community",
+  title: "Build Repository",
   description: "Explore the collective archives of digital builds and game projects from the REY community.",
 };
 

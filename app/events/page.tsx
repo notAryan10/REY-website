@@ -6,7 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "Events — REY Community",
+  title: "Events",
   description: "Join upcoming events, game jams, and workshops. Compete with other digital architects and earn XP.",
 };
 
