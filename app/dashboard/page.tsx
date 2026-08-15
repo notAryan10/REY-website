@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSession, signOut } from "next-auth/react";
 import { User, Shield, Zap, Trophy, LayoutDashboard, Settings, Trash2, ShieldCheck } from "lucide-react";
 import Link from "next/link";
@@ -16,6 +16,7 @@ import { UserXP } from "@/components/ui/UserXP";
 import { calculateLevel } from "@/lib/xp";
 import { LeaderboardCard } from "@/components/dashboard/LeaderboardCard";
 import { ItchConnect } from "@/components/dashboard/ItchConnect";
+import { SettingsModal } from "@/components/dashboard/SettingsModal";
 
 interface Quest {
   title: string;
@@ -33,11 +34,15 @@ interface Profile {
   itchUsername: string;
   itchVerified: boolean;
   itchVerificationToken: string;
+  name?: string;
+  image?: string;
+  hasPassword?: boolean;
 }
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
+  const { data: session, update: updateSession } = useSession();
   const [profile, setProfile] = React.useState<Profile | null>(null);
+  const [showSettings, setShowSettings] = React.useState(false);
 
   const fetchProfile = React.useCallback(async () => {
     try {
@@ -131,7 +136,12 @@ export default function DashboardPage() {
                             <Trophy size={14} className="mr-3" /> Achievements
                          </Button>
                        </Link>
-                       <Button variant="ghost" size="sm" className="w-full justify-start text-text-secondary">
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         className="w-full justify-start text-text-secondary"
+                         onClick={() => setShowSettings(true)}
+                       >
                           <Settings size={14} className="mr-3" /> Settings
                        </Button>
 
@@ -256,6 +266,23 @@ export default function DashboardPage() {
            </div>
         </Section>
       </main>
+
+      <AnimatePresence>
+        {showSettings && (
+          <SettingsModal
+            currentName={userName}
+            currentImage={profile?.image ?? session?.user?.image}
+            hasPassword={!!profile?.hasPassword}
+            onClose={() => setShowSettings(false)}
+            onSaved={async (updated) => {
+              setShowSettings(false);
+              // Refresh the JWT so the sidebar name and avatar update in place.
+              await updateSession({ name: updated.name, image: updated.image });
+              fetchProfile();
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
