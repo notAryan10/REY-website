@@ -19,11 +19,39 @@ function RegisterForm() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("spectator");
   const [accessCode, setAccessCode] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Step one mails a code to the address; step two enlists with it.
+  const requestOtp = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/register/otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Could not send the code.");
+      } else {
+        setOtpSent(true);
+        setNotice(data.message);
+      }
+    } catch {
+      setError("An unexpected error occurred.");
+    }
+    setIsLoading(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!otpSent) return requestOtp();
+
     setIsLoading(true);
     setError("");
 
@@ -31,7 +59,7 @@ function RegisterForm() {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role, accessCode }),
+        body: JSON.stringify({ name, email, password, role, accessCode, otp }),
       });
 
       const data = await res.json();
@@ -54,20 +82,23 @@ function RegisterForm() {
     { id: "architect", title: "Architect", icon: Shield, accent: "lava" as const, desc: "Elite rank." },
   ];
 
-  const handleOAuthSignIn = (provider: string) => {
-    // If they picked a role that needs an access code, we check it here for OAuth too
-    if (role === "respawner" && accessCode !== "REY-RESPAWN-2026") {
-      setError("Invalid Access Code for Respawner rank");
-      return;
-    }
-    if (role === "architect" && accessCode !== "REY-ARCHITECT-2026") {
-      setError("Invalid Access Code for Core Architect rank");
+  const handleOAuthSignIn = async (provider: string) => {
+    setError("");
+
+    // The server checks the access code and sets the signed pending_role cookie
+    // that lib/auth.ts reads during account creation.
+    const res = await fetch("/api/register/rank", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role, accessCode }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || "Could not claim that rank.");
       return;
     }
 
-    // Store the desired role in a cookie so lib/auth.ts can read it during creation
-    document.cookie = `pending_role=${role}; path=/; max-age=300; SameSite=Lax`;
-    
     signIn(provider, { callbackUrl });
   };
 
@@ -76,6 +107,12 @@ function RegisterForm() {
       {error && (
         <div className="bg-lava/10 border border-lava/20 p-4 text-[10px] uppercase font-pixel tracking-tighter text-lava animate-shake">
           {error}
+        </div>
+      )}
+
+      {notice && !error && (
+        <div className="bg-sky/10 border border-sky/20 p-4 text-[10px] uppercase font-pixel tracking-tighter text-sky">
+          {notice}
         </div>
       )}
 
@@ -145,7 +182,8 @@ function RegisterForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              placeholder="••••••••" 
+              minLength={8}
+              placeholder="8+ chars, letter and number"
               className="w-full bg-stone/20 border-2 border-border p-3 pl-10 text-xs text-white focus:border-sky outline-none placeholder:text-stone/40"
             />
           </div>
@@ -171,6 +209,35 @@ function RegisterForm() {
         )}
       </div>
 
+      {otpSent && (
+        <div className="space-y-2">
+          <label className="text-[10px] uppercase font-pixel tracking-widest text-sky">Verification Code</label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sky/60" />
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="\d{6}"
+              maxLength={6}
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+              required
+              placeholder="000000"
+              className="w-full bg-sky/5 border-2 border-sky/30 p-3 pl-10 text-xs text-white focus:border-sky outline-none placeholder:text-sky/20 tracking-[0.5em]"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={requestOtp}
+            disabled={isLoading}
+            className="text-[10px] uppercase font-pixel tracking-widest text-stone hover:text-white transition-colors underline"
+          >
+            Resend code
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <Link href="/login" className="text-[10px] uppercase font-pixel tracking-widest text-stone hover:text-white transition-colors underline">Already identified?</Link>
       </div>
@@ -180,9 +247,13 @@ function RegisterForm() {
           <div className="flex items-center gap-2">
             <Loader2 className="w-5 h-5 animate-spin" /> Finalizing...
           </div>
-        ) : (
+        ) : otpSent ? (
           <div className="flex items-center gap-2">
             Enlist as {role} <Rocket size={18} />
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            Send Verification Code <Mail size={18} />
           </div>
         )}
       </Button>

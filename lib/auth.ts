@@ -11,6 +11,7 @@ import { getServerSession } from "next-auth";
 import { cookies } from "next/headers";
 
 import AdminPermission from "@/models/AdminPermission";
+import { verifyRoleCookie } from "@/lib/rank";
 
 const FOUNDER_EMAIL = "aryanverma1857@gmail.com";
 
@@ -30,7 +31,6 @@ export async function getUserFromSession() {
   return await getServerSession(authOptions);
 }
 
-const ALLOWED_ROLES = ["Founder", "Core Architect", "Moderator", "architect", "respawner", "spectator"];
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -75,14 +75,13 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid email or password");
         }
 
-        // Handle role elevation for credentials login
+        // Handle role elevation for credentials login. Only a signed claim counts —
+        // see /api/register/rank.
         const cookieStore = await cookies();
-        const pendingRole = cookieStore.get("pending_role")?.value;
-        if (pendingRole && ALLOWED_ROLES.includes(pendingRole)) {
-          if (user.role !== pendingRole) {
-            user.role = pendingRole;
-            await user.save();
-          }
+        const pendingRole = verifyRoleCookie(cookieStore.get("pending_role")?.value);
+        if (pendingRole && user.role !== pendingRole) {
+          user.role = pendingRole;
+          await user.save();
         }
 
         // Auto-assign Founder role if email matches
@@ -114,10 +113,8 @@ export const authOptions: NextAuthOptions = {
       await dbConnect();
       const existingUser = await User.findOne({ email: user.email?.toLowerCase() });
       const cookieStore = await cookies();
-      const pendingRole = cookieStore.get("pending_role")?.value;
-      const role = (pendingRole && ALLOWED_ROLES.includes(pendingRole)) 
-        ? pendingRole 
-        : (user.email === FOUNDER_EMAIL ? "Founder" : null);
+      const pendingRole = verifyRoleCookie(cookieStore.get("pending_role")?.value);
+      const role = pendingRole ?? (user.email === FOUNDER_EMAIL ? "Founder" : null);
 
       if (!existingUser) {
         await User.create({

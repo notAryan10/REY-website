@@ -18,11 +18,24 @@ const pixel = Press_Start_2P({
 });
 
 export const metadata: Metadata = {
+  // Needed for absolute OG/Twitter URLs — without it, link previews break.
+  metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3000"),
   title: {
     default: "REY - Game Dev Club",
     template: "%s | REY"
   },
   description: "A premium, game-inspired UI system for the REY community.",
+  openGraph: {
+    type: "website",
+    siteName: "REY",
+    title: "REY - Game Dev Club",
+    description: "A premium, game-inspired UI system for the REY community.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "REY - Game Dev Club",
+    description: "A premium, game-inspired UI system for the REY community.",
+  },
   keywords: ["game dev", "minecraft", "architects", "digital builders", "game jams", "REY club"],
   authors: [{ name: "REY Collective" }],
   creator: "REY Collective",

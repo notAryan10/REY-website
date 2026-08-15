@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
-import { sendEmail } from "@/lib/mail";
+import { sendEmail, emailLayout } from "@/lib/mail";
+import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 
 export async function POST(req: Request) {
   try {
@@ -11,6 +12,13 @@ export async function POST(req: Request) {
     if (!email) {
       return NextResponse.json({ error: "Please provide an email" }, { status: 400 });
     }
+
+    // Each request sends real mail, so cap it per address and per host.
+    const perEmail = rateLimit(`reset:email:${String(email).toLowerCase()}`, 3, 15 * 60 * 1000);
+    if (!perEmail.ok) return tooManyRequests(perEmail.retryAfter);
+
+    const perIp = rateLimit(`reset:ip:${clientIp(req)}`, 10, 60 * 60 * 1000);
+    if (!perIp.ok) return tooManyRequests(perIp.retryAfter);
 
     await dbConnect();
 
@@ -30,21 +38,31 @@ export async function POST(req: Request) {
       .update(resetToken)
       .digest("hex");
 
-    // Set expire (10 minutes)
-    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+    // Long enough to survive checking email on a phone and coming back later.
+    user.resetPasswordExpire = Date.now() + 60 * 60 * 1000;
 
     await user.save({ validateBeforeSave: false });
 
     // Create reset url
     const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password/${resetToken}`;
 
-    const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
+    const message =
+      `Someone asked to reset the password for your REY account.\n\n` +
+      `Open this link to choose a new one — it expires in 1 hour:\n\n${resetUrl}\n\n` +
+      `If that wasn't you, ignore this email. Your password stays as it is.`;
 
     try {
       await sendEmail({
         email: user.email,
-        subject: "Password Reset Token",
+        subject: "Reset your REY password",
         message,
+        html: emailLayout({
+          heading: "Reset your password",
+          body: `<p style="margin:0">Someone asked to reset the password for your REY account.
+                 Choose a new one with the button below — the link expires in <strong>1 hour</strong>.</p>`,
+          cta: { label: "Choose a new password", url: resetUrl },
+          footer: "If that wasn't you, ignore this email. Your password stays as it is.",
+        }),
       });
 
       return NextResponse.json({ message: "If an account with that email exists, a password reset link has been sent." });
