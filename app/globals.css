@@ -129,33 +129,13 @@
     );
   }
 
-  .retro-flicker {
-    @apply fixed inset-0 pointer-events-none z-[102] opacity-[0.015];
-    background: #fff;
-    animation: flicker 0.15s infinite;
-  }
-
   @keyframes scanline {
     0% { background-position: 0 0, 0 0; }
     100% { background-position: 0 100%, 0 0; }
   }
 
-  @keyframes flicker {
-    0% { opacity: 0.015; }
-    5% { opacity: 0.02; }
-    10% { opacity: 0.01; }
-    15% { opacity: 0.015; }
-    30% { opacity: 0.015; }
-    35% { opacity: 0.01; }
-    40% { opacity: 0.02; }
-    45% { opacity: 0.015; }
-    60% { opacity: 0.015; }
-    65% { opacity: 0.01; }
-    70% { opacity: 0.02; }
-    75% { opacity: 0.015; }
-    90% { opacity: 0.015; }
-    95% { opacity: 0.01; }
-    100% { opacity: 0.015; }
+  @media (prefers-reduced-motion: reduce) {
+    .retro-overlay { animation: none; }
   }
 
   .glitch {

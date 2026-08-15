@@ -56,7 +56,6 @@ export default function RootLayout({
           {/* Retro Filter Layers */}
           <div className="retro-overlay" />
           <div className="retro-vignette" />
-          <div className="retro-flicker" />
           <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[100] bg-[url('/textures/dark-matter.png')]" />
           
           <Navbar />

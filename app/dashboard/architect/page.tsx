@@ -619,10 +619,25 @@ function ConfigureUserModal({ user, onClose, onSaved, showStatus }: {
   const nameError = trimmedName.length < 2 || trimmedName.length > 50;
   const isDirty = trimmedName !== user.name || role !== user.role || level !== originalLevel;
 
-  const RANKS: { id: User["role"], label: string, desc: string }[] = [
-    { id: "spectator", label: "Spectator", desc: "Entry level access" },
-    { id: "respawner", label: "Respawner", desc: "Member access" },
-    { id: "architect", label: "Architect", desc: "Elite rank" },
+  // Same accent per rank as the login/register pages: spectator grey,
+  // respawner sky, architect lava. Classes are spelled out because Tailwind
+  // can't see them if they're built from a template string.
+  const RANKS: { id: User["role"], label: string, desc: string, selected: string, marker: string }[] = [
+    {
+      id: "spectator", label: "Spectator", desc: "Entry level access",
+      selected: "border-text-secondary bg-white/5",
+      marker: "border-text-secondary bg-text-secondary",
+    },
+    {
+      id: "respawner", label: "Respawner", desc: "Member access",
+      selected: "border-sky bg-sky/10",
+      marker: "border-sky bg-sky",
+    },
+    {
+      id: "architect", label: "Architect", desc: "Elite rank",
+      selected: "border-lava bg-lava/10",
+      marker: "border-lava bg-lava",
+    },
   ];
 
   const handleSave = async () => {
@@ -713,15 +728,13 @@ function ConfigureUserModal({ user, onClose, onSaved, showStatus }: {
                   type="button"
                   onClick={() => setRole(r.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 border-2 text-left transition-colors ${
-                    role === r.id
-                      ? "border-architect-blue bg-architect-blue/10"
-                      : "border-white/10 bg-white/[0.02] hover:border-white/25"
+                    role === r.id ? r.selected : "border-white/10 bg-white/[0.02] hover:border-white/25"
                   }`}
                 >
                   {/* Square marker, not a radio dot — matches the pixel styling */}
                   <div
                     className={`w-3 h-3 border-2 shrink-0 ${
-                      role === r.id ? "border-architect-blue bg-architect-blue" : "border-white/25"
+                      role === r.id ? r.marker : "border-white/25"
                     }`}
                   />
                   <div className="min-w-0">
