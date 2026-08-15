@@ -3,9 +3,18 @@
 import React, { useEffect, useState } from "react";
 import { motion, useSpring, useMotionValue } from "framer-motion";
 
+type CursorMode = "default" | "pointer" | "text";
+
+// Inputs that take a caret. Buttons, checkboxes and the like are excluded so
+// they keep the pointer.
+const TEXT_INPUT = `textarea, [contenteditable=""], [contenteditable="true"],
+  input:is([type="text"], [type="email"], [type="password"], [type="search"],
+  [type="tel"], [type="url"], [type="number"], :not([type]))`;
+
 export default function CustomCursor() {
-  const [isHovering, setIsHovering] = useState(false);
+  const [mode, setMode] = useState<CursorMode>("default");
   const [isVisible, setIsVisible] = useState(false);
+  const isHovering = mode === "pointer";
 
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
@@ -31,16 +40,20 @@ export default function CustomCursor() {
 
     const handleMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (
+
+      // Text first: an input inside a label would otherwise read as a pointer.
+      if (target.closest(TEXT_INPUT)) {
+        setMode("text");
+      } else if (
         target.tagName === "A" ||
         target.tagName === "BUTTON" ||
         target.closest("button") ||
         target.closest("a") ||
         window.getComputedStyle(target).cursor === "pointer"
       ) {
-        setIsHovering(true);
+        setMode("pointer");
       } else {
-        setIsHovering(false);
+        setMode("default");
       }
     };
 
@@ -77,6 +90,39 @@ export default function CustomCursor() {
         />
       ))}
 
+      {/* Retro Pixel Caret - shown over text fields */}
+      <motion.div
+        className="fixed top-0 left-0"
+        style={{
+          x: cursorXSpring,
+          y: cursorYSpring,
+          // Centred on the hotspot, unlike the arrow which points from its tip.
+          translateX: "-50%",
+          translateY: "-50%",
+          display: mode === "text" ? "block" : "none",
+        }}
+      >
+        <motion.svg
+          width="17"
+          height="26"
+          viewBox="0 0 16 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          animate={{ opacity: [1, 1, 0.35, 0.35, 1] }}
+          transition={{ duration: 1.1, repeat: Infinity, times: [0, 0.45, 0.5, 0.95, 1] }}
+        >
+          {/* Outline, one block larger than the body on every side */}
+          <rect x="3" y="2" width="10" height="4" fill="black" />
+          <rect x="6" y="4" width="4" height="16" fill="black" />
+          <rect x="3" y="18" width="10" height="4" fill="black" />
+
+          {/* Body */}
+          <rect x="4" y="3" width="8" height="2" fill="white" />
+          <rect x="7" y="5" width="2" height="14" fill="white" />
+          <rect x="4" y="19" width="8" height="2" fill="white" />
+        </motion.svg>
+      </motion.div>
+
       {/* Retro Pixel Pointer - Classic RPG Style */}
       <motion.div
         className="fixed top-0 left-0"
@@ -85,6 +131,7 @@ export default function CustomCursor() {
           y: cursorYSpring,
           translateX: "-10%",
           translateY: "-10%",
+          display: mode === "text" ? "none" : "block",
         }}
       >
         <svg 

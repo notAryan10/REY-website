@@ -62,7 +62,10 @@
     cursor: none;
   }
 
-  a, button, [role="button"], .cursor-pointer {
+  /* Form controls carry cursor: text from the UA stylesheet, which beats the
+     inherited cursor: none above — hence the stock macOS I-beam. */
+  a, button, [role="button"], .cursor-pointer,
+  input, textarea, select, [contenteditable] {
     cursor: none !important;
   }
 }
