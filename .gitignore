@@ -49,3 +49,5 @@ scripts/*
 GSD-STYLE.md
 PROJECT_RULES.md
 model_capabilities.yaml
+# graphify build artifacts (regenerate with /graphify)
+graphify-out/
