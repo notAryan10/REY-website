@@ -44,7 +44,8 @@ next-env.d.ts
 .gsd/
 adapters/
 docs/
-scripts/
+scripts/*
+!scripts/verify-deployment.js
 GSD-STYLE.md
 PROJECT_RULES.md
 model_capabilities.yaml
