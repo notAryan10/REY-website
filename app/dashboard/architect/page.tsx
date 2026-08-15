@@ -483,8 +483,10 @@ function MembersSection({ users, searchTerm, setSearchTerm, fetchData, showStatu
   showStatus: (type: "success" | "error", message: string) => void, 
   session: Session | null 
 }) {
-  const filteredUsers = users.filter((u: User) => 
-    u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const [configUser, setConfigUser] = useState<User | null>(null);
+
+  const filteredUsers = users.filter((u: User) =>
+    u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -574,19 +576,227 @@ function MembersSection({ users, searchTerm, setSearchTerm, fetchData, showStatu
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredUsers.map((user: User) => (
-          <UserCard 
-            key={user._id} 
-            user={user} 
-            onStatusChange={handleStatusChange} 
+          <UserCard
+            key={user._id}
+            user={user}
+            onStatusChange={handleStatusChange}
             onDelete={handleDeleteUser}
+            onConfigure={setConfigUser}
           />
         ))}
       </div>
+
+      <AnimatePresence>
+        {configUser && (
+          <ConfigureUserModal
+            user={configUser}
+            onClose={() => setConfigUser(null)}
+            onSaved={() => {
+              setConfigUser(null);
+              fetchData();
+            }}
+            showStatus={showStatus}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function UserCard({ user, onStatusChange, onDelete }: { user: User, onStatusChange: (id: string, status: string, name: string) => void, onDelete: (id: string, name: string) => void }) {
+function ConfigureUserModal({ user, onClose, onSaved, showStatus }: {
+  user: User,
+  onClose: () => void,
+  onSaved: () => void,
+  showStatus: (type: "success" | "error", message: string) => void,
+}) {
+  const [name, setName] = useState(user.name);
+  const [role, setRole] = useState(user.role);
+  const [level, setLevel] = useState(calculateLevel(user.xp || 0).level);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const originalLevel = calculateLevel(user.xp || 0).level;
+  const trimmedName = name.trim();
+  const nameError = trimmedName.length < 2 || trimmedName.length > 50;
+  const isDirty = trimmedName !== user.name || role !== user.role || level !== originalLevel;
+
+  const RANKS: { id: User["role"], label: string, desc: string }[] = [
+    { id: "spectator", label: "Spectator", desc: "Entry level access" },
+    { id: "respawner", label: "Respawner", desc: "Member access" },
+    { id: "architect", label: "Architect", desc: "Elite rank" },
+  ];
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // Name and rank share one endpoint; level has its own because it writes XP.
+      if (trimmedName !== user.name || role !== user.role) {
+        const res = await fetch(`/api/admin/users/${user._id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: trimmedName, role }),
+        });
+        if (!res.ok) throw new Error((await res.json()).error || "Update failed");
+      }
+
+      if (level !== originalLevel) {
+        const res = await fetch("/api/admin/level", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user._id, level }),
+        });
+        if (!res.ok) throw new Error((await res.json()).error || "Level update failed");
+      }
+
+      showStatus("success", `${user.name} reconfigured`);
+      onSaved();
+    } catch (err) {
+      showStatus("error", err instanceof Error ? err.message : "Network error");
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 8 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md bg-[#0d0d0f] border-2 border-white/10 overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10">
+          <Settings size={16} className="text-architect-blue shrink-0" />
+          <div className="min-w-0">
+            <h3 className="text-[11px] font-pixel uppercase tracking-widest text-white truncate">
+              Configure Citizen
+            </h3>
+            <p className="text-[10px] text-text-secondary font-mono truncate mt-1">{user.email}</p>
+          </div>
+        </div>
+
+        <div className="px-6 py-6 space-y-8">
+          {/* Name */}
+          <div className="space-y-3">
+            <label className="block text-[10px] font-pixel uppercase tracking-widest text-text-secondary">
+              Architect Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={50}
+              className={`w-full h-11 bg-black/40 border-2 px-4 text-xs text-white outline-none transition-colors ${
+                nameError ? "border-lava" : "border-white/10 focus:border-architect-blue"
+              }`}
+            />
+            {nameError && (
+              <p className="text-[10px] text-lava">Name must be 2-50 characters.</p>
+            )}
+          </div>
+
+          {/* Rank */}
+          <div className="space-y-3">
+            <label className="block text-[10px] font-pixel uppercase tracking-widest text-text-secondary">
+              Rank
+            </label>
+            <div className="space-y-2">
+              {RANKS.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setRole(r.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 border-2 text-left transition-colors ${
+                    role === r.id
+                      ? "border-architect-blue bg-architect-blue/10"
+                      : "border-white/10 bg-white/[0.02] hover:border-white/25"
+                  }`}
+                >
+                  {/* Square marker, not a radio dot — matches the pixel styling */}
+                  <div
+                    className={`w-3 h-3 border-2 shrink-0 ${
+                      role === r.id ? "border-architect-blue bg-architect-blue" : "border-white/25"
+                    }`}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-pixel uppercase tracking-wider text-white">{r.label}</p>
+                    <p className="text-[10px] text-text-secondary mt-0.5">{r.desc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Level */}
+          <div className="space-y-3">
+            <div className="flex items-baseline justify-between">
+              <label className="text-[10px] font-pixel uppercase tracking-widest text-text-secondary">
+                Level
+              </label>
+              <span className="text-[10px] text-text-secondary font-mono">
+                {(level - 1) * 500} XP
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="stone"
+                size="sm"
+                className="h-10 w-10 p-0 shrink-0"
+                onClick={() => setLevel((l) => Math.max(1, l - 1))}
+                disabled={level <= 1}
+              >
+                <Minus size={14} />
+              </Button>
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={level}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  setLevel(Number.isNaN(n) ? 1 : Math.min(50, Math.max(1, n)));
+                }}
+                className="flex-1 h-10 bg-black/40 border-2 border-white/10 text-center text-sm font-pixel text-white focus:border-architect-blue outline-none"
+              />
+              <Button
+                variant="stone"
+                size="sm"
+                className="h-10 w-10 p-0 shrink-0"
+                onClick={() => setLevel((l) => Math.min(50, l + 1))}
+                disabled={level >= 50}
+              >
+                <Plus size={14} />
+              </Button>
+            </div>
+            {level !== originalLevel && (
+              <p className="text-[10px] text-architect-orange leading-relaxed">
+                Setting a level overwrites XP — {user.name} goes from {originalLevel} to {level}.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-3 px-6 py-5 border-t border-white/10 bg-white/[0.02]">
+          <Button variant="stone" size="sm" onClick={onClose} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button variant="sky" size="sm" onClick={handleSave} disabled={!isDirty || nameError || isSaving}>
+            {isSaving ? "Applying..." : "Apply"}
+          </Button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function UserCard({ user, onStatusChange, onDelete, onConfigure }: { user: User, onStatusChange: (id: string, status: string, name: string) => void, onDelete: (id: string, name: string) => void, onConfigure: (user: User) => void }) {
   const { level, progress } = calculateLevel(user.xp || 0);
 
   return (
@@ -641,7 +851,13 @@ function UserCard({ user, onStatusChange, onDelete }: { user: User, onStatusChan
           {user.status === 'active' ? <UserMinus size={12} className="mr-1" /> : <UserPlus size={12} className="mr-1" />}
           {user.status === 'active' ? 'Suspend' : 'Active'}
         </Button>
-        <Button variant="stone" size="sm" className="text-[9px] h-9 px-1">
+        <Button
+          variant="stone"
+          size="sm"
+          className="text-[9px] h-9 px-1"
+          onClick={() => onConfigure(user)}
+          disabled={user.role === "Founder"}
+        >
           <Settings size={12} className="mr-1" />
           Config
         </Button>
